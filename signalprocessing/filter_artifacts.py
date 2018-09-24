@@ -12,11 +12,16 @@ def remove_edges(X, npoints):
         X[:, npoints:len(X)-npoints]
     """
     flag_multiple = True
-    try:
+
+    if X.ndim == 2:
         n, T = X.shape
-    except:
+
+    elif X.ndim == 1:
         T = X.shape[0]
         flag_multiple = False
+
+    else:
+        raise ValueError("Wrong input dimension")
 
     if flag_multiple:
         return X[:, npoints:T-npoints]
@@ -51,14 +56,24 @@ class PreProcessing():
         Returns:
             filtered signal
         """
-        forder = 4            # order of Butterworth filter
-        halfband = float(bandwidth) / 2
+
         flag_multiple = True  # if we have more than one time series
-        try:
+        if X.ndim == 2:
             n, T = X.shape    # number of time series times length
-        except:
+        elif X.ndim == 1:
             T = X.shape       # length of the time series
             flag_multiple = False
+        else:
+            raise ValueError("Wrong input dimensions")
+
+        if powerline < 0. or powerline > self.nyq:
+            raise ValueError("Wrong value of powerline frequency")
+
+        if bandwidth < 0:
+            raise ValueError("Wrong width for bandstop filter")
+
+        forder = 4            # order of Butterworth filter
+        halfband = float(bandwidth) / 2
 
         bandstop_freqs = powerline * np.arange(1, self.nyq / powerline)  # this array goes from powerline to nyq
 
@@ -87,17 +102,20 @@ class PreProcessing():
 
         flag_multiple = True
 
-        try:
+        if X.ndim == 2:
             n, T = X.shape                # number of time series times length
             bm = np.ones(n, dtype=bool)   # by default all set to True value
-        except:
+        elif X.ndim == 1:
             T = X.shape                   # length of the time series
             flag_multiple = False
+        else:
+            raise ValueError("Wrong input dimensions")
 
         gradient = np.diff(X)             # difference between two time steps
 
         if flag_multiple:
-            bm = [True if np.sum(g == 0) < 1000 else False for g in gradient]
+            bm = np.array([True if np.sum(g == 0) < 1000 else False
+                           for g in gradient])
 
         else:
             bm = np.sum(gradient==0) < 1000
