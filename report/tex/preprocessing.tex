@@ -1,0 +1,81 @@
+\documentclass[a4paper]{article}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[]{url}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+%% Sets page size and margins
+%\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{color}
+\usepackage{adjustbox} % Used to constrain images to a maximum size
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\begin{document}
+\section{Wavelet transform}
+We use continuous wavelet transform as a transformation to get a multiscale representation of one dimensional signals. We fix the mother wavelet to the Morlet wavelet transform. The implementation in \textbf{pywt}, the open source Python library dedicated to this, does not provide the possibility to compute automatically the number of scales and the frequencies relative to them, given a signal of length $N$ and its sampling period $T_s$. In the following we compute these quantities
+
+The Morlet mother wavelet is equal to $\Psi(t)$
+\begin{equation}
+  \Psi(t) = \frac{1}{\sqrt{\pi B}} e^{-\frac{t^2}{B}}e^{i 2 \pi C t}
+\end{equation}
+where $B$ is related to the variance of the gaussian and $C$ to the frequency of the oscillations. To understand which is the optimal choice of the scale we consider the filter in the frequency domain.
+\begin{align*}
+\mathcal{F}(\Psi)(\omega) = \frac{1}{\sqrt{2\pi}}\int_{-\infty}^{+\infty} \frac{1}{\sqrt{\pi B}}e^{-\frac{t^2}{B}}e^{i 2 \pi C t} e^{-i\omega t}dt \\
+\mathcal{F}(\Psi)(\omega) = \frac{1}{\sqrt{2\pi}\sqrt{\pi B}}\int_{-\infty}^{+\infty} e^{-\frac{t^2}{B}} e^{-2i\frac{\omega - 2 \pi C}{2} t}  dt
+\end{align*}
+By completing the square, this corresponds to
+$$ \mathcal{F}(\Psi)(\omega) = \frac{1}{\sqrt{2\pi^2 B}} e^{-\frac{(\omega - 2\pi C)^2B^2}{4}}\int_{-\infty}^{+\infty} e^{-\frac{1}{B}\left(t + j\frac{\omega - 2\pi C}{2}B\right)^2}dt $$
+The second term is an analytical function. By computing the integral on a rectangular path on the complex plane we get zero contribute from the vertical edges. The horizontal path corresponds to the gaussian integral on the real line.
+\begin{align}
+\mathcal{F}(\Psi)(\omega) &= \frac{1}{\sqrt{2\pi^2 B}} e^{-\frac{(\omega - 2\pi C)^2B^2}{4}}  \sqrt{\pi B} \propto  e^{-\frac{(\omega - 2\pi C)^2}{(2/B)^2}}  = e^{-\frac{4\pi^2(\omega/2\pi - C)^2}{4/B^2}} \\
+&= \frac{1}{\sqrt{2\pi}}\exp\left[-\frac{(f-C)^2}{1/(\pi^2 B^2)}\right]
+\end{align}
+
+The filter has a gaussian shape, in particular we can now interpret the different constants
+\begin{align*}
+f_c & = C, \text{ central frequency}\\
+\sigma_f & = \frac{1}{\sqrt{2}\pi B}, \text{filter width}
+\end{align*}
+In the first version of MT-MKL the parameters values were $B=1$ s, $C=1$ Hz.
+This values are such that the width of the gaussian in the frequency domain is fixed at $\sigma_{width}\sim6\ \text{s}^{-1}$.
+
+The important part is understanding the relation between the filter width and the scaling factor of the gaussian distribution. In order to address this point we consider the influence of the scaling factor on the Fourier transform.
+We know in particular that, $C=1$ Hz and $B=1$ s for the case of $f_s=1$ Hz. Since in our case the sampling frequency is equivalent to 1 kHz, the scaling factors and the decay time for the Morlet mother wavelet correspond respectively to 1 kHz and 1 ms.
+We now interpret the relation with the scale factor $a$. A dilation in time corresponds to a shrinkage in the frequency domain and vice versa.
+
+By increasing $a$ we get the following
+\begin{align*}
+ \mathcal{F}(\Psi_a)(\omega) = \frac{1}{\sqrt{2\pi}} \exp\left[-\frac{(a f - C)^2}{1/(\pi B)^2}\right] =
+ \frac{1}{\sqrt{2\pi}} \exp\left[-\frac{(f - C/a)^2}{1/(\pi a B)^2}\right]
+\end{align*}
+
+where both the central frequency and the filter width are compressed of a factor $a$. In particular we get the following
+
+\begin{align}
+  f^{(a)}_c &= \frac{C}{a}, \qquad a=1 \rightarrow f^{(1)}_c=f_s \\
+  \sigma^{(a)} &= \frac{1}{\sqrt{2}\pi a B}, \qquad a=1 \rightarrow \sigma^{(1)}= \frac{1}{\sqrt{2}\pi B}
+\end{align}
+
+Still we want the representation to be redundant. We initialize the smallest scale at the value $s=2.1$. This corresponds to a central frequency $f^{(2.1)}_c=476$ Hz (below Nyquist). We get then the central frequency at higher scales by requiring the next frequency to corresponds to the point where the height of the normal distribution is 0.95
+\begin{equation}
+  \exp\left[-\frac{\left(f^{(a+1)}_c-f^{(a)}_c\right)^2}{2 \left(\sigma^{(a)}\right)^2}\right] = 0.95
+\end{equation}
+This returns the following condition
+\begin{align*}
+ -\frac{\left(f^{(a+1)}_c-f^{(a)}_c\right)^2}{2 \left(\sigma^{(a)}\right)^2} = \ln(0.95) \rightarrow & \left(f^{(a+1)}_c-f^{(a)}_c\right)^2 = -2 \left(\sigma^{(a)}\right)^2 \ln(0.95) \\
+  & f^{(a+1)}_c = f^{(a)}_c - \sigma^{(a)}\sqrt{-2 \ln(0.95)}
+\end{align*}
+
+
+\end{document}
