@@ -11,6 +11,7 @@
 %\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
 
 %% Useful packages
+\usepackage{bm}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{color}
@@ -20,6 +21,19 @@
 \usepackage{subcaption}
 \usepackage[colorinlistoftodos]{todonotes}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+
+\colorlet{gray}{gray!15}
+
+\def\etal{\emph{et al.}}
+\def\ie{\emph{i.e.}}
+\def\eg{\emph{e.g.}}
+\def\vs{\emph{vs}}
+\DeclareMathOperator{\argminop}{argmin}
+\DeclareMathOperator{\minimize}{minimize}
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+
 
 \begin{document}
 \section{Wavelet transform - filter width}\label{sec:wavelet_filter}
@@ -108,4 +122,68 @@ In the first version of MT-MKL no cross correlation measure has been selected fr
 \paragraph{Retrain using cross correlation only} In the first version we compared the entire time series, building kernel measures for each patient. The fact that the cross correlation is never selected is a possible evidence of strong correlations. We train the method using only cross correlation kernels to see how the classification - selection performance changes.
 \paragraph{Non convexity} The method is not convex and the initialization value is extremely important. We resort to accelerated methods to minimize the functional.
 
+\section{Learning model and minimization methods}
+For each patient we have a matrix $\bm{X}^{(p)} \in \mathbb{R}^{c_p\times T}$ and a vector of labels $\bm{y}^{(p)}$ which denotes the pathological or physiological nature of each signal in $\bm X^{(p)}$. Note that the number of channels $c_p$ varies across patients, and the proportion of epileptic channels is not uniform across the population considered.
+%
+%From the input data $\bm{X}^{(p)}$ we denote by Formally, for each patient $p = 1, \dots, n$ consider
+We denote with $(K^{(p)}_1, \dots, K^{(p)}_k)$, where $K_j^{(p)} \in\mathbb{R}^{c_p \times c_p}$ the set of $k$ kernels for the generic patient $p$.
+%
+The decision function $f^{(p)}$ for a patient $p$ and a channel $x$ is defined as:
+\begin{equation}
+f^{(p)}(x) = \alpha^{(p)}_0 + \sum_{i = 1}^{c_p}\left[\alpha^{(p)}_i \sum_{j=1}^{k} w_j K^{(p)}_j(x_i, x)\right],
+\end{equation}
+%
+where $\alpha^{(p)}_i$ denotes the $i$-th component of the regression parameter  $\bm{\alpha}^{(p)}$ specific for each patient $p$.
+% We use two regression parameters $\bm{\alpha}^{(p)}$ and $\bm{w}$.
+%
+%Note the use of a set of regression parameters $\bm \alpha=(\bm{\alpha}^{(1)}, \dots, \bm{\alpha}^{(n)})$ and $\bm{w}$, where the former is specific for each patient $p$.
+%
+Having separate parameters ($\bm{\alpha}^{(p)}$ and $\bm{w}$) is fundamental for the resolution of our problem. In fact, $\bm{\alpha}^{(p)}$ allows to better approximate the labels $\bm y^{(p)}$ by capturing the variance of each patient, while $\bm{w}$ combines the kernels by weighting them and, as it holds across patients, it provides relevant indication of the most discriminative kernels.
+
+In order to obtain interpretable results and a more stable solution we also add an $\ell_1\ell_2$ penalty on $\bm{w}$ and $\bm \alpha=(\bm{\alpha}^{(1)}, \dots, \bm{\alpha}^{(n)})$.
+%
+By considering all the patients, our goal translates into minimizing the following objective function:
+\begin{align}\label{eq:mkl-multipatient}\begin{split}
+\underset{\bm{\alpha}^{(1)}, \dots, \bm{\alpha}^{(n)}, \bm{w}}{\minimize}
+\bigg\{& \sum_{p=1}^n  \left( \ell_{f^{(p)}} \left(\bm{X}^{(p)}, \bm{y}^{(p)}\right) + \lambda  (r_\lambda \|\bm{\alpha}^{(p)}\|_1+(1-r_\lambda)\|\bm{\alpha}^{(p)}\|_2^2) \right)\\
+& + n\beta \left(r_\beta \|\bm{w}\|_1 + (1-r_\beta)\|\bm{w}\|^2_2\right) \bigg\}\\
+& \text{s.t.}\ w_j \geq 0 \text{ for each } j=1,\dots,k
+\end{split}\end{align}
+%
+where $\ell_{f^{(p)}}\left(\bm{X}^{(p)}, \bm{y}^{(p)}\right) = -\sum_{i=1}^{c_p}\log(1 + \exp(-y_i^{(p)}f^{(p)}(x_i)))$ is the negative log-likelihood of the logistic probability function and $r_\lambda$ and $r_\beta$ are the elastic-net penalty penalty ratios on
+ $\bm{\alpha}$ and $\bm{w}$, respectively.
+The elastic-net penalty benefits indeed from the well-known stability property of the $\ell_2$ regularization term \cite{zou2005regularization}.
+
+\subsection{Model upgrades}
+We modify the model in such a way to
+\begin{enumerate}
+  \item Normalize the learning model with respect to $c_p$. If we normalize the output for the prediction function with respect to the number of training channels (more homogeneity of the kernel weights) - in the other case the $\alpha^{(p)}$ have to compensate - to get $y_i^{(p)} f^{(p)}(x_i)$ such to exceeds $\frac12$.
+  \item Normalize the loss function with respect to $c_p$; if not the weight for the loss term in the functional varies across patients and depends on the number of channels
+  \item Normalize the penalty term over channels with respect to the number of channels used
+\end{enumerate}
+\begin{align}
+  & f^{(p)}(x) = \alpha^{(p)}_0 + \frac{1}{c_p}\sum_{i = 1}^{c_p}\left[\alpha^{(p)}_i \sum_{j=1}^{k} w_j K^{(p)}_j(x_i, x)\right] \\
+  &\ell_{f^{(p)}}\left(\bm{X}^{(p)}, \bm{y}^{(p)}\right) = -\frac{1}{c_p}\sum_{i=1}^{c_p}\log\left(1 + \exp\left(-y_i^{(p)}f^{(p)}(x_i)\right)\right)
+\end{align}
+
+\begin{align}
+  \begin{split}
+    %\underset{\bm{\alpha}^{(1)}, \dots, \bm{\alpha}^{(n)}, \bm{w}}{\minimize}
+    %&\bigg\{ \frac{1}{n}\sum_{p=1}^n  \left( \ell_{f^{(p)}} \left(\bm{X}^{(p)}, \bm{y}^{(p)}\right) + \frac{\lambda}{c_p}  \left(r_\lambda \|\bm{\alpha}^{(p)}\|_1+(1-r_\lambda)\|\bm{\alpha}^{(p)}\|_2^2\right) \right)\\
+    %&+ \beta \left(r_\beta  \|\bm{w}\|_1 + (1-r_\beta)\|\bm{w}\|^2_2\right) \bigg\}\\
+    %& \text{s.t.}\ w_j \geq 0 \text{ for each } j=1,\dots,k
+    \underset{\bm{\alpha}^{(1)}, \dots, \bm{\alpha}^{(n)}, \bm{w}}{\minimize}
+    \bigg\{ & \frac{1}{n}\sum_{p=1}^n  \Bigg( \frac{1}{c_p}\left(\sum_{i=1}^{c_p} - \log\left[1 + \exp\left[-y_i^{(p)}f^{(p)}(x_i)\right]\right] \right)+\\
+    &\lambda  \left(r_\lambda \|\bm{\alpha}^{(p)}\|_1+(1-r_\lambda)\|\bm{\alpha}^{(p)}\|_2^2\right) \Bigg)\\
+    &+ \beta \left(r_\beta  \|\bm{w}\|_1 + (1-r_\beta)\|\bm{w}\|^2_2\right) \bigg\}\\
+    & \text{s.t.}\ w_j \geq 0 \text{ for each } j=1,\dots,k
+  \end{split}
+\end{align}
+
+\subsection{Update rule based on GD}
+\begin{align}
+  & \frac{\partial f^{(p)}(x_i)}{\partial w_t} = \frac{1}{c_p} \sum_{i=1}^{c_p}\Big[\alpha_i^{(p)} K_t^{(p)}(x_i, x)\Big] \\
+  & \frac{\partial \ell_{f^{(p)}}}{\partial f^{(p)}} = \frac{1}{1+\exp\left[-y_i^{(p)}f^{(p)}_i\right]} y_i^{(p)}\exp\left[-y_i^{(p)}f^{(p)}_i\right] \\
+  & \frac{\partial {f^{(p)}}(x_i) }{\alpha_t^{p}} = \frac{1}{c_p}\sum_{j=1}^k w_j K_j^{(p)}(x_t, x)
+\end{align}
 \end{document}
