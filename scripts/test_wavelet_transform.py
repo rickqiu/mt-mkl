@@ -7,7 +7,6 @@ from signalprocessing.kernel_function import correlation, phaselockingvalue, fou
 
 
 def main():
-
     path = "/home/vanessa/DATA_SEEG/PKL_FILE/"
     folderlist = [f for f in os.listdir(path) if not (f.endswith(".pkl") or f.startswith("_"))]
 

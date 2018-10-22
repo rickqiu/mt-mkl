@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from os.path import join
 
+from mtmkl.utils import generate_index
+
 
 def load(path):  # , prc_tr, prc_val, prc_ts):
     """ Here we give the path which contains the kernel for each patient. This folder contains three directories - corr, plv, cross
@@ -69,12 +71,3 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
         y_list.append(y_patient)
 
     return X_list, y_list
-
-
-def generate_index(X_list, y_list, cv):
-    X_list_transpose = [X.transpose(1, 2, 0) for X in X_list]
-    split = [cv.split(X, y) for X, y in zip(X_list_transpose, y_list)]
-    n_splits = min(cv.get_n_splits(X, y, None) for X, y in zip(X_list_transpose, y_list))
-
-    for i in range(n_splits):
-        yield zip(*[next(s) for s in split])

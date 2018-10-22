@@ -12,7 +12,7 @@ from sklearn.linear_model.logistic import _logistic_loss
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.validation import check_is_fitted
 
-from multikernel.lasso import LinearClassifierMixin
+from mtmkl.multikernel.lasso import LinearClassifierMixin
 
 
 def logistic_loss(K, y, alpha, coef, lamda, beta):

@@ -15,9 +15,8 @@ from sklearn.metrics import accuracy_score, r2_score
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.extmath import squared_norm
 
-from regain.prox import soft_thresholding as soft_thresholding
-from regain.update_rules import update_rho
-from regain.utils import convergence
+from mtmkl.prox import soft_thresholding, prox_laplacian
+from mtmkl.utils import convergence, update_rho
 
 
 def lasso_objective(Y, w, K, w_1, lamda):

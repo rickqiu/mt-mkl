@@ -17,9 +17,9 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.extmath import log_logistic, safe_sparse_dot
 from sklearn.utils.validation import check_is_fitted
 
-from multikernel.lasso import LinearClassifierMixin, squared_norm
-from multikernel.logistic import LogisticRegressionMultipleKernel
-from multikernel.logistic import logistic_loss as single_logloss
+from mtmkl.multikernel.lasso import LinearClassifierMixin, squared_norm
+from mtmkl.multikernel.logistic import LogisticRegressionMultipleKernel
+from mtmkl.multikernel.logistic import logistic_loss as single_logloss
 
 
 

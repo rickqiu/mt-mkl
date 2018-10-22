@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""multikernel setup script.
+"""mtmkl setup script.
 
 Author: Federico Tomasi, Vanessa D'Amario
 Copyright (c) 2018, Federico Tomasi, Vanessa D'Amario.
@@ -8,20 +8,20 @@ Licensed under the BSD 3-Clause License (see LICENSE.txt).
 
 from setuptools import find_packages, setup
 
-from multikernel import __version__ as version
+from mtmkl import __version__ as version
 
 setup(
-    name='multikernel',
+    name='mtmkl',
     version=version,
 
-    description=('MKL (Multiple Kernel Learning)'),
+    description=('MT-MKL (Multi Task Multiple Kernel Learning)'),
     long_description=open('README.md').read(),
     author='Federico Tomasi, Vanessa D\'Amario',
     author_email='federico.tomasi@dibris.unige.it, vanessa.damario@dibris.unige.it',
     maintainer='Federico Tomasi, Vanessa D\'Amario',
     maintainer_email='federico.tomasi@dibris.unige.it', 'vanessa.damario@dibris.unige.it',
-    url='https://github.com/fdtomasi/multikernel',
-    download_url='https://github.com/fdtomasi/multikernel/archive/'
+    download_url='https://github.com/slipguru/mt-mkl/archive/'
+    url='https://github.com/slipguru/mt-mkl',
                  'v%s.tar.gz' % version,
     keywords=['kernel', 'machine learning', 'time series', 'epilepsy', 'wavelet'],
     classifiers=[
@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     requires=['numpy (>=1.11)',
               'scipy (>=0.16.1,>=1.0)',
-              'sklearn (>=0.17)',
               'pywt',
+              'sklearn (>=0.20)',
               'six'],
 )
