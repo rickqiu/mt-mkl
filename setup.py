@@ -1,8 +1,8 @@
 #!/usr/bin/python
 """multikernel setup script.
 
-Author: Federico Tomasi
-Copyright (c) 2017, Federico Tomasi.
+Author: Federico Tomasi, Vanessa D'Amario
+Copyright (c) 2018, Federico Tomasi, Vanessa D'Amario.
 Licensed under the BSD 3-Clause License (see LICENSE.txt).
 """
 
@@ -16,14 +16,14 @@ setup(
 
     description=('MKL (Multiple Kernel Learning)'),
     long_description=open('README.md').read(),
-    author='Federico Tomasi',
-    author_email='federico.tomasi@dibris.unige.it',
-    maintainer='Federico Tomasi',
-    maintainer_email='federico.tomasi@dibris.unige.it',
+    author='Federico Tomasi, Vanessa D\'Amario',
+    author_email='federico.tomasi@dibris.unige.it, vanessa.damario@dibris.unige.it',
+    maintainer='Federico Tomasi, Vanessa D\'Amario',
+    maintainer_email='federico.tomasi@dibris.unige.it', 'vanessa.damario@dibris.unige.it',
     url='https://github.com/fdtomasi/multikernel',
     download_url='https://github.com/fdtomasi/multikernel/archive/'
                  'v%s.tar.gz' % version,
-    keywords=['kernel', 'learning'],
+    keywords=['kernel', 'machine learning', 'time series', 'epilepsy', 'wavelet'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
@@ -45,5 +45,6 @@ setup(
     requires=['numpy (>=1.11)',
               'scipy (>=0.16.1,>=1.0)',
               'sklearn (>=0.17)',
+              'pywt',
               'six'],
 )

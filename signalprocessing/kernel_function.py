@@ -31,7 +31,7 @@ def fourier_corr(x, y=None):
     (i) x, a matrix of recordings of dimensions (# recordings, # length time series)
     (ii) x, y, two dimensional arrays for which we compute the cross correlation
 
-                        ||F(x) * F(y)||**2 / (||F(x)|| * ||F(y)||)
+                        < |F(x)|, |F(y)|> / (||F(x)|| * ||F(y)||)
 
     Parameters:
         x, np.array of dimensions (# recordings, # time points)
