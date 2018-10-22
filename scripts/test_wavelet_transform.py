@@ -1,9 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
-from signalprocessing.filter_artifacts import PreProcessing, remove_edges
-from signalprocessing.wavelet_transform import CWTTransform
-from signalprocessing.kernel_function import correlation, phaselockingvalue, fourier_corr
+from mtmkl.signalprocessing.filter_artifacts import PreProcessing, remove_edges
+from mtmkl.signalprocessing.wavelet_transform import CWTTransform
+from mtmkl.signalprocessing.kernel_function import correlation, phaselockingvalue, fourier_corr
 
 
 def main():
@@ -23,7 +23,9 @@ def main():
             for pathk in pathkernel:
                 os.mkdir(path + f + pathk)
         except:
-            pass
+            continue
+
+        print(ff.keys())
 
         # the pickle is such that it contains in the last columns the structural features for the channel of acquisition
         # we want to see where we have the true values - the first string column corresponds to the y - medical tag for epileptic or not

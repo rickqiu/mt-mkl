@@ -40,25 +40,29 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
     # each of these paths contains the Y.csv and the folder of kernels
 
     y = []  # path of to the labels
+    kernels = []
 
     for id in id_list:
         # path for the kernels
-        kernels = sorted([join(path, id, "kernel", k, s) for k in os.listdir(join(path, id, "kernel")) for s in os.listdir(join(path, id, "kernel", k))])
+        kernels.append(sorted([join(path, id, "kernel", k, s) for k in os.listdir(join(path, id, "kernel")) for s in os.listdir(join(path, id, "kernel", k))]))
         y.append(join(id, "data.pkl"))
 
-
     X_list, y_list = [], []
+
     for kk, yy in zip(kernels, y):
+
         # load the dataframe with time series and labels
-        labels = pd.DataFrame(pd.read_pickle(yy, header=None, index_col=0)["Y"])
+        labels = pd.DataFrame(pd.read_pickle(yy)["Y"])
         labels.columns = ['Y']
 
         # generate the list for data and labels
         X_patient, y_patient = [], []
 
         for f in kk:
+
             # load the file - fixed patient - kernel - scale
             scale = pd.read_csv(f, header=0, index_col=0)
+
             scale = scale.sort_index().loc[:, sorted(scale.columns)] # order
             merging = scale.merge(labels, left_index=True, right_index=True)
             labels_ = merging['Y']  # sorted labels
@@ -69,5 +73,6 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
 
         X_list.append(np.array(X_patient))
         y_list.append(y_patient)
+
 
     return X_list, y_list

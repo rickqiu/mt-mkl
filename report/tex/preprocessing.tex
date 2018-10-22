@@ -22,7 +22,7 @@
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 
 \begin{document}
-\section{Wavelet transform}
+\section{Wavelet transform - filter width}\label{sec:wavelet_filter}
 We use continuous wavelet transform as a transformation to get a multiscale representation of one dimensional signals. We fix the mother wavelet to the Morlet wavelet transform. The implementation in \textbf{pywt}, the open source Python library dedicated to this, does not provide the possibility to compute automatically the number of scales and the frequencies relative to them, given a signal of length $N$ and its sampling period $T_s$. In the following we compute these quantities
 
 The Morlet mother wavelet is equal to $\Psi(t)$
@@ -77,5 +77,35 @@ This returns the following condition
   & f^{(a+1)}_c = f^{(a)}_c - \sigma^{(a)}\sqrt{-2 \ln(0.95)}
 \end{align*}
 
+\section{Similarity measures based on synchronization}
+In the first version of MT-MKL we use the entire time series to evaluate pairwise similarity betweent recordings acquired on the same subject. We resort to standard measures of signal processing. Note that this measures are not applied on the raw time series but on the wavelet coefficients for each scale. To introduce the similarity measures we denote the generic time series - which are vectors of complex numbers, corresponding to the wavelet coefficients at a fixed scale - as $x(t)$ and $y(t)$, each of length $T$.
+
+\paragraph{Correlation} this represents the most standard measure, and it is the dot product between the two time series. It corresponds to
+\begin{equation}
+  \text{correlation}(x,y) = \frac{\langle x(t), y(t) \rangle}{\| x(t) \|_2 \| y(t) \|_2}
+\end{equation}
+with $\text{correlation}(x,y)\in [-1,1]$. This corresponds to the most basic kernel, and we think, a posteriori, it is not the best way to evaluate a comparison between two time series in case where shift invariance is needed.
+
+\paragraph{Phase locking value (PLV)} this measure is common in the neurological context and represents the measure of pairwise phase synchrony between two recordings. We compute PLV as follows
+\begin{equation}
+ \text{PLV}(x,y) = \frac{1}{T}\sum_{t=1}^T |\exp[i (\phi(x) -\phi(y))]|
+\end{equation}
+with $\phi(x(t))$ and $\phi(y(t))$ the phases for the two time series.
+In this case $\text{PLV}(x,y)\in [0,1]$.
+
+\paragraph{Cross correlation} in order to obtain a shift invariant measure of similarity we resort to cross correlation. This quantity corresponds to a measure of correlation between the spectra of the two signals.
+\begin{equation}
+  \text{cross correlation}(x,y) = \frac{\langle|\mathcal{F}(x)|, |\mathcal{F}(y)| \rangle}{\|\mathcal{F}(x)\|_2 \|\mathcal{F}(y)\|_2}
+\end{equation}
+In the first version of MT-MKL we use MATLAB as software, and this measure was computationally quite intensive. We splitted each time series in one hundred non overlapping of length 6 s. We use now the Python functions. The split is not necessary, we compute the Fourier transform, then the pointwise absolute value and finally we perform the cross correlation measure.
+
+
+In the first version of MT-MKL no cross correlation measure has been selected from the algorithm. This highlights several  unconsidered aspects (i) the cross correlation as measured in MATLAB is likely to be a rough estimate of the pairwise spectra similarity, given that it is an average computed over non overlapping chuncks of 6 seconds (ii) presence of high correlation between time series, rather than the individuation of specific patterns.
+
+\section{Next steps}
+
+\paragraph{Analysis over all patients} The first version of MT-MKL is a preliminary work, for which we use a subset of patients, since the preprocessing step is computationally expensive. We run now the algorithm over all the patients, with the wavelet filters as evaluated in Section \ref{sec:wavelet_filter}.
+\paragraph{Retrain using cross correlation only} In the first version we compared the entire time series, building kernel measures for each patient. The fact that the cross correlation is never selected is a possible evidence of strong correlations. We train the method using only cross correlation kernels to see how the classification - selection performance changes.
+\paragraph{Non convexity} The method is not convex and the initialization value is extremely important. We resort to accelerated methods to minimize the functional.
 
 \end{document}
