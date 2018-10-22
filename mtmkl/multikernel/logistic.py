@@ -1,6 +1,4 @@
-"""
-Logistic Regression
-"""
+"""Logistic Regression."""
 from __future__ import division
 
 import warnings
@@ -17,7 +15,7 @@ from mtmkl.multikernel.lasso import LinearClassifierMixin
 
 def logistic_loss(K, y, alpha, coef, lamda, beta):
     X = np.tensordot(coef, K, axes=1)
-    return cp.array(_logistic_loss(alpha, X, y, lamda) -
+    return np.array(_logistic_loss(alpha, X, y, lamda) -
                     .5 * lamda * np.dot(alpha, alpha))
 
 
