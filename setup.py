@@ -19,10 +19,9 @@ setup(
     author='Federico Tomasi, Vanessa D\'Amario',
     author_email='federico.tomasi@dibris.unige.it, vanessa.damario@dibris.unige.it',
     maintainer='Federico Tomasi, Vanessa D\'Amario',
-    maintainer_email='federico.tomasi@dibris.unige.it', 'vanessa.damario@dibris.unige.it',
-    download_url='https://github.com/slipguru/mt-mkl/archive/'
-    url='https://github.com/slipguru/mt-mkl',
-                 'v%s.tar.gz' % version,
+    maintainer_email='federico.tomasi@dibris.unige.it, vanessa.damario@dibris.unige.it',
+    download_url='https://github.com/slipguru/mt-mkl/archive/',
+    url='https://github.com/slipguru/mt-mklv%s.tar.gz' % version,
     keywords=['kernel', 'machine learning', 'time series', 'epilepsy', 'wavelet'],
     classifiers=[
         'Development Status :: 4 - Beta',
