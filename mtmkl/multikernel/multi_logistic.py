@@ -22,20 +22,22 @@ from mtmkl.multikernel.logistic import LogisticRegressionMultipleKernel
 from mtmkl.multikernel.logistic import logistic_loss as single_logloss
 
 
-
 def soft_thresholding(a, lamda):
     """Soft-thresholding."""
     return np.sign(a) * np.maximum(np.abs(a) - lamda, 0)
 
 
 def logistic_loss(K, y, alpha, coef, lamda, beta):
-    return sum(single_logloss(K[i], y[i], alpha[i], coef, lamda, beta)
-               for i in range(len(K)))
+    return sum(
+        single_logloss(K[i], y[i], alpha[i], coef, lamda, beta)
+        for i in range(len(K)))
 
 
 def logistic_objective(K, y, alpha, coef, lamda, beta):
-    obj = sum(_logistic_loss(alpha[i], np.tensordot(coef, K[i], axes=1), y[i],
-              lamda) for i in range(len(K)))
+    obj = sum(
+        _logistic_loss(
+            alpha[i], np.tensordot(coef, K[i], axes=1), y[i], lamda)
+        for i in range(len(K)))
     obj += beta * np.abs(coef).sum()
     return obj
 
@@ -103,10 +105,10 @@ def _logistic_loss_and_grad(w, alpha, X, y, lamda, sample_weight=None):
     return out, grad
 
 
-def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5,
-                         max_iter=100, l1_ratio_lamda=0.1, l1_ratio_beta=0.1,
-                         deep=True, verbose=0, tol=1e-4, return_n_iter=True,
-                         fit_intercept=True, lr_p2=None):
+def logistic_alternating(
+        K, y, lamda=0.01, beta=0.01, gamma=.5, max_iter=100,
+        l1_ratio_lamda=0.1, l1_ratio_beta=0.1, deep=True, verbose=0, tol=1e-4,
+        return_n_iter=True, fit_intercept=True, lr_p2=None):
     # multiple patient
     n_patients = len(K)
     n_kernels = len(K[0])
@@ -132,7 +134,8 @@ def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5,
             l_i = lr_p2[i].fit(np.tensordot(coef, K[i], axes=1), y[i])
             a = soft_thresholding(l_i.coef_.ravel(), lamda * l1_ratio_lamda)
             alpha.append(a)
-            c = soft_thresholding(l_i.intercept_.ravel(), lamda * l1_ratio_lamda)
+            c = soft_thresholding(
+                l_i.intercept_.ravel(), lamda * l1_ratio_lamda)
             intercepts.append(c)
             alpha_intercept.append(np.hstack((a, c)))
 
@@ -167,13 +170,15 @@ def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5,
             sum(squared_norm(a - a_old) for a, a_old in zip(alpha, alpha_old)))
 
         if verbose:
-            print("obj: %.4f, loss: %.4f, diff_w: %.4f, diff_a: %.4f" % (
-                obj, logistic_loss(K, y, alpha, coef, lamda, beta), diff_w,
-                diff_a))
+            print(
+                "obj: %.4f, loss: %.4f, diff_w: %.4f, diff_a: %.4f" % (
+                    obj, logistic_loss(K, y, alpha, coef, lamda, beta), diff_w,
+                    diff_a))
 
         if diff_a < tol and objective_difference < tol:
             break
-        if np.isnan(diff_w) or np.isnan(diff_a) or np.isnan(objective_difference):
+        if np.isnan(diff_w) or np.isnan(diff_a) or np.isnan(
+                objective_difference):
             raise ValueError('something is nan')
     else:
         warnings.warn("Objective did not converge.")
@@ -184,16 +189,17 @@ def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5,
 
 
 class MultipleLogisticRegressionMultipleKernel(
-        LogisticRegressionMultipleKernel, LogisticRegression, LinearClassifierMixin):
+        LogisticRegressionMultipleKernel, LogisticRegression,
+        LinearClassifierMixin):
     # Ensure consistent split
     _pairwise = True
 
-    def __init__(self, penalty='l2', dual=False, tol=1e-4,
-                 fit_intercept=True, intercept_scaling=1, class_weight=None,
-                 random_state=None, solver='liblinear', max_iter=100,
-                 multi_class='ovr', verbose=0, warm_start=False, n_jobs=1,
-                 l1_ratio_lamda=0.1, l1_ratio_beta=0.1, deep=True,
-                 lamda=0.01, gamma=1, rho=1, rtol=1e-4, beta=0.01):
+    def __init__(
+            self, penalty='l2', dual=False, tol=1e-4, fit_intercept=True,
+            intercept_scaling=1, class_weight=None, random_state=None,
+            solver='liblinear', max_iter=100, multi_class='ovr', verbose=0,
+            warm_start=False, n_jobs=1, l1_ratio_lamda=0.1, l1_ratio_beta=0.1,
+            deep=True, lamda=0.01, gamma=1, rho=1, rtol=1e-4, beta=0.01):
         self.penalty = penalty
         self.dual = dual
         self.tol = tol
@@ -250,11 +256,14 @@ class MultipleLogisticRegressionMultipleKernel(
         #     penalty='elasticnet', alpha=self.lamda, warm_start=True,
         #     max_iter=(self.max_iter // 3 if self.deep else 1) + 0)
         #     for i in range(len(X))]
-        self.lr_p2 = [LogisticRegression(
-            fit_intercept=self.fit_intercept, penalty='l2', solver='lbfgs',
-            C=1. / (self.lamda * (1 - self.l1_ratio_lamda)), warm_start=True,
-            max_iter=(self.max_iter // 3 if self.deep else 1) + 5)
-            for i in range(len(X))]
+        self.lr_p2 = [
+            LogisticRegression(
+                fit_intercept=self.fit_intercept, penalty='l2', solver='lbfgs',
+                C=1. / (self.lamda * (1 - self.l1_ratio_lamda)),
+                warm_start=True,
+                max_iter=(self.max_iter // 3 if self.deep else 1) + 5)
+            for i in range(len(X))
+        ]
 
         self.alpha_, self.coef_, self.intercept_, self.n_iter_ = \
             logistic_alternating(
@@ -296,8 +305,11 @@ class MultipleLogisticRegressionMultipleKernel(
         # return [LinearClassifierMixin.predict(
         #     self, np.tensordot(k, a, axes=1)) for a, k in zip(
         #         self.alpha_, X)]
-        return [self.lr_p2[i].predict(np.tensordot(
-            self.coef_.ravel(), X[i], axes=1)) for i in range(len(X))]
+        return [
+            self.lr_p2[i].predict(
+                np.tensordot(self.coef_.ravel(), X[i], axes=1))
+            for i in range(len(X))
+        ]
 
     def score(self, K, y, sample_weight=None):
         """Returns the coefficient of determination R^2 of the prediction.
@@ -328,12 +340,15 @@ class MultipleLogisticRegressionMultipleKernel(
         """
         y_pred = self.predict(K)
         if sample_weight is None:
-            return np.mean([accuracy_score(
-                y[j], y_pred[j]) for j in range(len(K))])
+            return np.mean(
+                [accuracy_score(y[j], y_pred[j]) for j in range(len(K))])
         else:
-            return np.mean([
-                accuracy_score(y[j], y_pred[j], sample_weight=sample_weight[j])
-                for j in range(len(K))])
+            return np.mean(
+                [
+                    accuracy_score(
+                        y[j], y_pred[j], sample_weight=sample_weight[j])
+                    for j in range(len(K))
+                ])
 
     def predict_proba(self, X):
         """Probability estimates.
@@ -362,8 +377,11 @@ class MultipleLogisticRegressionMultipleKernel(
         # return [LinearClassifierMixin._predict_proba_lr(
         #     self, np.tensordot(k, a, axes=1)) for a, k in zip(
         #         self.alpha_, X)]
-        return [self.lr_p2[i].predict_proba(np.tensordot(
-            self.coef_.ravel(), X[i], axes=1)) for i in range(len(X))]
+        return [
+            self.lr_p2[i].predict_proba(
+                np.tensordot(self.coef_.ravel(), X[i], axes=1))
+            for i in range(len(X))
+        ]
 
     def predict_log_proba(self, X):
         """Log of probability estimates.
