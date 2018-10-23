@@ -15,18 +15,19 @@ from mtmkl.multikernel.lasso import LinearClassifierMixin
 
 def logistic_loss(K, y, alpha, coef, lamda, beta):
     X = np.tensordot(coef, K, axes=1)
-    return np.array(_logistic_loss(alpha, X, y, lamda) -
-                    .5 * lamda * np.dot(alpha, alpha))
+    return np.array(
+        _logistic_loss(alpha, X, y, lamda) - .5 * lamda * np.dot(alpha, alpha))
 
 
 def logistic_objective(K, y, alpha, coef, lamda, beta):
     X = np.tensordot(coef, K, axes=1)
-    return np.array(_logistic_loss(alpha, X, y, lamda) +
-                    beta * np.abs(coef).sum())
+    return np.array(
+        _logistic_loss(alpha, X, y, lamda) + beta * np.abs(coef).sum())
 
 
-def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5, max_iter=100,
-                         verbose=0, tol=1e-4, return_n_iter=True):
+def logistic_alternating(
+        K, y, lamda=0.01, beta=0.01, gamma=.5, max_iter=100, verbose=0,
+        tol=1e-4, return_n_iter=True):
     # single patient
     n_kernels, n_samples, n_dimensions = K.shape
 
@@ -35,10 +36,11 @@ def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5, max_iter=100,
     alpha = np.zeros(n_dimensions)
 
     lr_p2 = LogisticRegression(
-        verbose=verbose, penalty='l2', C=1 / lamda, warm_start=True, max_iter=1)
+        verbose=verbose, penalty='l2', C=1 / lamda, warm_start=True,
+        max_iter=1)
     lr_p1 = SGDClassifier(
-        loss='log', l1_ratio=0.9,
-        verbose=0, penalty='elasticnet', alpha=beta, warm_start=True, max_iter=1)
+        loss='log', l1_ratio=0.9, verbose=0, penalty='elasticnet', alpha=beta,
+        warm_start=True, max_iter=1)
 
     for iteration_ in range(max_iter):
         w_old = coef.copy()
@@ -63,15 +65,17 @@ def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5, max_iter=100,
         diff_w = np.linalg.norm(coef - w_old)
         diff_a = np.linalg.norm(alpha - alpha_old)
 
-        if verbose:# and iteration_ % 10 == 0:
+        if verbose:  # and iteration_ % 10 == 0:
             # print("obj: %.4f, snorm: %.4f" % (obj, snorm))
-            print("obj: %.4f, loss: %.4f, diff_w: %.4f, diff_a: %.4f" % (
-                obj, logistic_loss(K, y, alpha, coef, lamda, beta), diff_w,
-                diff_a))
+            print(
+                "obj: %.4f, loss: %.4f, diff_w: %.4f, diff_a: %.4f" % (
+                    obj, logistic_loss(K, y, alpha, coef, lamda, beta), diff_w,
+                    diff_a))
 
         if diff_w < tol and diff_a < tol and objective_difference < tol:
             break
-        if np.isnan(diff_w) or np.isnan(diff_a) or np.isnan(objective_difference):
+        if np.isnan(diff_w) or np.isnan(diff_a) or np.isnan(
+                objective_difference):
             raise ValueError('something is nan')
     else:
         warnings.warn("Objective did not converge.")
@@ -81,29 +85,23 @@ def logistic_alternating(K, y, lamda=0.01, beta=0.01, gamma=.5, max_iter=100,
     return return_list
 
 
-class LogisticRegressionMultipleKernel(LogisticRegression, LinearClassifierMixin):
+class LogisticRegressionMultipleKernel(LogisticRegression,
+                                       LinearClassifierMixin):
     # Ensure consistent split
     _pairwise = True
 
-    def __init__(self, penalty='l2', dual=False, tol=1e-4, C=1.0,
-                 fit_intercept=True, intercept_scaling=1, class_weight=None,
-                 random_state=None, solver='liblinear', max_iter=100,
-                 multi_class='ovr', verbose=0, warm_start=False, n_jobs=1,
-                 lamda=0.01, gamma=1, rho=1, rtol=1e-4, beta=0.01):
-        self.penalty = penalty
-        self.dual = dual
-        self.tol = tol
-        self.C = C
-        self.fit_intercept = fit_intercept
-        self.intercept_scaling = intercept_scaling
-        self.class_weight = class_weight
-        self.random_state = random_state
-        self.solver = solver
-        self.max_iter = max_iter
-        self.multi_class = multi_class
-        self.verbose = verbose
-        self.warm_start = warm_start
-        self.n_jobs = n_jobs
+    def __init__(
+            self, penalty='l2', dual=False, tol=1e-4, C=1.0,
+            fit_intercept=True, intercept_scaling=1, class_weight=None,
+            random_state=None, solver='liblinear', max_iter=100,
+            multi_class='ovr', verbose=0, warm_start=False, n_jobs=1,
+            lamda=0.01, gamma=1, rho=1, rtol=1e-4, beta=0.01):
+        super(LogisticRegressionMultipleKernel, self).__init__(
+            penalty=penalty, dual=dual, tol=tol, C=C,
+            fit_intercept=fit_intercept, intercept_scaling=intercept_scaling,
+            class_weight=class_weight, random_state=random_state,
+            solver=solver, max_iter=max_iter, multi_class=multi_class,
+            verbose=verbose, warm_start=warm_start, n_jobs=n_jobs)
 
         self.lamda = lamda
         self.beta = beta
@@ -140,8 +138,8 @@ class LogisticRegressionMultipleKernel(LogisticRegression, LinearClassifierMixin
         if self._label_binarizer.y_type_.startswith('multilabel'):
             # we don't (yet) support multi-label classification in ENet
             raise ValueError(
-                "%s doesn't support multi-label classification" % (
-                    self.__class__.__name__))
+                "%s doesn't support multi-label classification" %
+                (self.__class__.__name__))
 
         # Y = column_or_1d(Y, warn=True)
         self.alpha_, self.coef_, self.n_iter_ = logistic_alternating(
@@ -181,8 +179,9 @@ class LogisticRegressionMultipleKernel(LogisticRegression, LinearClassifierMixin
             class would be predicted.
         """
         if not hasattr(self, 'coef_') or self.coef_ is None:
-            raise NotFittedError("This %(name)s instance is not fitted "
-                                 "yet" % {'name': type(self).__name__})
+            raise NotFittedError(
+                "This %(name)s instance is not fitted "
+                "yet" % {'name': type(self).__name__})
 
         # X = check_array(X, accept_sparse='csr')
 
@@ -191,8 +190,8 @@ class LogisticRegressionMultipleKernel(LogisticRegression, LinearClassifierMixin
         #     raise ValueError("X has %d features per sample; expecting %d"
         #                      % (X.shape[1], n_features))
         #
-        scores = np.tensordot(self.coef_, X, axes=1)# + self.intercept_
-        return scores.ravel() # if scores.shape[1] == 1 else scores
+        scores = np.tensordot(self.coef_, X, axes=1)  # + self.intercept_
+        return scores.ravel()  # if scores.shape[1] == 1 else scores
 
     def predict(self, K):
         """Predict using the kernel ridge model

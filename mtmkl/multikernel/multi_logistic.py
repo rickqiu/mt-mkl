@@ -1,17 +1,14 @@
-"""
-Logistic Regression
-"""
+"""Logistic Regression."""
 from __future__ import division
 
 import warnings
 
-# import cupy as cp
 import numpy as np
 from scipy.special import expit
-from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model.logistic import _intercept_dot, _logistic_loss
-from sklearn.linear_model.logistic import \
-    _logistic_loss_and_grad as _loglossgrad
+# from sklearn.linear_model.logistic import \
+#     _logistic_loss_and_grad as _loglossgrad
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils.extmath import log_logistic, safe_sparse_dot
@@ -20,11 +17,7 @@ from sklearn.utils.validation import check_is_fitted
 from mtmkl.multikernel.lasso import LinearClassifierMixin, squared_norm
 from mtmkl.multikernel.logistic import LogisticRegressionMultipleKernel
 from mtmkl.multikernel.logistic import logistic_loss as single_logloss
-
-
-def soft_thresholding(a, lamda):
-    """Soft-thresholding."""
-    return np.sign(a) * np.maximum(np.abs(a) - lamda, 0)
+from mtmkl.prox import soft_thresholding
 
 
 def logistic_loss(K, y, alpha, coef, lamda, beta):
@@ -200,25 +193,14 @@ class MultipleLogisticRegressionMultipleKernel(
             solver='liblinear', max_iter=100, multi_class='ovr', verbose=0,
             warm_start=False, n_jobs=1, l1_ratio_lamda=0.1, l1_ratio_beta=0.1,
             deep=True, lamda=0.01, gamma=1, rho=1, rtol=1e-4, beta=0.01):
-        self.penalty = penalty
-        self.dual = dual
-        self.tol = tol
-        self.fit_intercept = fit_intercept
-        self.intercept_scaling = intercept_scaling
-        self.class_weight = class_weight
-        self.random_state = random_state
-        self.solver = solver
-        self.max_iter = max_iter
-        self.multi_class = multi_class
-        self.verbose = verbose
-        self.warm_start = warm_start
-        self.n_jobs = n_jobs
 
-        self.lamda = lamda
-        self.beta = beta
-        self.gamma = gamma
-        self.rho = rho
-        self.rtol = rtol
+        super(MultipleLogisticRegressionMultipleKernel, self).__init__(
+            penalty=penalty, dual=dual, tol=tol, fit_intercept=fit_intercept,
+            intercept_scaling=intercept_scaling, class_weight=class_weight,
+            random_state=random_state, solver=solver, max_iter=max_iter,
+            multi_class=multi_class, verbose=verbose, warm_start=warm_start,
+            n_jobs=n_jobs, lamda=lamda, gamma=gamma, rho=rho, rtol=rtol,
+            beta=beta)
         self.l1_ratio_lamda = l1_ratio_lamda
         self.l1_ratio_beta = l1_ratio_beta
         self.deep = deep
@@ -289,7 +271,7 @@ class MultipleLogisticRegressionMultipleKernel(
         return self
 
     def predict(self, X):
-        """Predict using the kernel ridge model
+        """Predict using the kernel ridge model.
 
         Parameters
         ----------
