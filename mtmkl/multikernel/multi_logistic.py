@@ -79,12 +79,12 @@ def _logistic_loss_and_grad(w, alpha, X, y, lamda, sample_weight=None):
             sample_weight = np.ones(n_samples)
 
         # Logistic loss is the negative of the log of the logistic function.
-        out += -np.sum(sample_weight * log_logistic(yz))
+        out += -np.sum(sample_weight * log_logistic(yz)) / n_samples
 
         z = expit(yz)
         z0 = sample_weight * (z - 1) * y[i]
 
-        grad += safe_sparse_dot(X[i].dot(alpha_i), z0)
+        grad += safe_sparse_dot(X[i].dot(alpha_i), z0) / n_samples
 
         # alpha_i, c_i, x_i = _intercept_dot(alpha[i][:-1], X[i], 1.)
         # out_i, grad_i = _loglossgrad(
@@ -143,10 +143,10 @@ def logistic_alternating(
         for it in range(max_iter_deep):
             coef_old = coef.copy()
 
-            l2_reg = beta * (1 - l1_ratio_beta)
+            l2_reg = beta * (1 - l1_ratio_beta) * n_patients
             loss, gradient = _logistic_loss_and_grad(
                 coef, alpha_intercept, K, y, l2_reg)
-            l1_reg = beta * l1_ratio_beta
+            l1_reg = beta * l1_ratio_beta * n_patients
             coef = soft_thresholding(coef - gamma * gradient, gamma * l1_reg)
             coef = np.maximum(coef, 0.)
 
