@@ -162,7 +162,7 @@ We modify the model in such a way to
   \item Normalize the penalty term over channels with respect to the number of channels used
 \end{enumerate}
 \begin{align}
-  & f^{(p)}(x) = \alpha^{(p)}_0 + \frac{1}{c_p}\sum_{i = 1}^{c_p}\left[\alpha^{(p)}_i \sum_{j=1}^{k} w_j K^{(p)}_j(x_i, x)\right] \\
+  & f^{(p)}(x) = \alpha^{(p)}_0 + \sum_{i = 1}^{c_p}\left[\alpha^{(p)}_i \sum_{j=1}^{k} w_j K^{(p)}_j(x_i, x)\right] \\
   &\ell_{f^{(p)}}\left(\bm{X}^{(p)}, \bm{y}^{(p)}\right) = -\frac{1}{c_p}\sum_{i=1}^{c_p}\log\left(1 + \exp\left(-y_i^{(p)}f^{(p)}(x_i)\right)\right)
 \end{align}
 
@@ -182,8 +182,8 @@ We modify the model in such a way to
 
 \subsection{Update rule based on GD}
 \begin{align}
-  & \frac{\partial f^{(p)}(x_i)}{\partial w_t} = \frac{1}{c_p} \sum_{i=1}^{c_p}\Big[\alpha_i^{(p)} K_t^{(p)}(x_i, x)\Big] \\
+  & \frac{\partial f^{(p)}(x_i)}{\partial w_t} =  \sum_{i=1}^{c_p}\Big[\alpha_i^{(p)} K_t^{(p)}(x_i, x)\Big] \\
   & \frac{\partial \ell_{f^{(p)}}}{\partial f^{(p)}} = \frac{1}{1+\exp\left[-y_i^{(p)}f^{(p)}_i\right]} y_i^{(p)}\exp\left[-y_i^{(p)}f^{(p)}_i\right] \\
-  & \frac{\partial {f^{(p)}}(x_i) }{\alpha_t^{p}} = \frac{1}{c_p}\sum_{j=1}^k w_j K_j^{(p)}(x_t, x)
+  & \frac{\partial {f^{(p)}}(x_i) }{\alpha_t^{p}} = \sum_{j=1}^k w_j K_j^{(p)}(x_t, x)
 \end{align}
 \end{document}
