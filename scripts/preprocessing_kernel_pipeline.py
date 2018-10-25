@@ -35,12 +35,8 @@ def main():
         values = ff.values[:, :colsstr[0]]  # recordings for all channels
 
         PreProcess = PreProcessing(fs=sampling_freq)
-        mask = PreProcess.check_no_artifacts(values)
+        values = PreProcess.remove_powerline(values)
 
-        np.save(path + f + "/mask.npy", mask)
-        # we save the mask for each patient
-
-        remove_pl = PreProcess.remove_powerline(values)
         WaveletTransf = CWTTransform(fs=sampling_freq)
         central_freqs = WaveletTransf.freqs
 
