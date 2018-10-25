@@ -25,7 +25,7 @@ def H0zscore(X):
     minim = firstim - 1.5 * iqrim
     maxim = thirdim + 1.5 * iqrim
 
-    if X.ndim = 2:
+    if X.ndim == 2:
         mure_list = []  # create the list for mean value of the real coefs
         muim_list = []
         sigmare_list = []
