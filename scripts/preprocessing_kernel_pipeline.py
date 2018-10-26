@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+from os.path import join
 from mtmkl.signalprocessing.filter_artifacts import PreProcessing, remove_edges
 from mtmkl.signalprocessing.wavelet_transform import CWTTransform
 from mtmkl.signalprocessing.kernel_function import correlation, phaselockingvalue, fourier_corr
@@ -9,21 +10,22 @@ from mtmkl.signalprocessing.kernel_function import correlation, phaselockingvalu
 def main():
     path = "/home/vanessa/DATA_SEEG/PKL_FILE/"
     folderlist = [f for f in os.listdir(path) if not (f.endswith(".pkl") or f.startswith("_"))]
-
+    print(folderlist)
     # sampling frequency for our acquisitions is equivalent to 1 kHz
     sampling_freq = 1000.
-    pathkernel = ["/kernel/plv/", "/kernel/corr/", "/kernel/cross/"]
+    pathkernel = ["plv", "corr", "cross"]
 
     for f in folderlist:
         print("patient", f)
 
-        ff = pd.read_pickle(path + f + "/data.pkl")
+        ff = pd.read_pickle(join(path, f, "data.pkl"))
+
         try:
-            os.mkdir(path + f + "/kernel/")
+            os.mkdir(join(path, f, "kernel"))
             for pathk in pathkernel:
-                os.mkdir(path + f + pathk)
+                os.mkdir(join(path, f, "kernel", pathk))
         except:
-            continue
+            pass
 
         print(ff.keys())
 
@@ -47,12 +49,13 @@ def main():
             # we want to remove the edges, after all the filtering part
             cwt_coefs = remove_edges(cwt_coefs)
 
+            ### for the entire time series
             pd.DataFrame(data=phaselockingvalue(cwt_coefs), index=ff.index,
-                        columns=ff.index).to_csv(path + f + pathkernel[0] + "scale_"+str(n)+".csv")
+                        columns=ff.index).to_csv(join(path, f, "kernel", pathkernel[0], "scale_"+str(n)+".csv"))
 
-            pd.DataFrame(data=correlation(np.abs(cwt_coefs)), index=ff.index,  columns=ff.index).to_csv(path + f + pathkernel[1] + "scale_"+str(n)+".csv")
+            pd.DataFrame(data=correlation(np.abs(cwt_coefs)), index=ff.index,  columns=ff.index).to_csv(join(path, f, "kernel", pathkernel[1], "scale_"+str(n)+".csv"))
 
-            pd.DataFrame(data=fourier_corr(cwt_coefs), index=ff.index, columns=ff.index).to_csv(path + f + pathkernel[2] + "scale_"+str(n)+".csv")
+            pd.DataFrame(data=fourier_corr(cwt_coefs), index=ff.index, columns=ff.index).to_csv(join(path, f, "kernel", pathkernel[2], "scale_"+str(n)+".csv"))
 
 
 

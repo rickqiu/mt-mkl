@@ -5,14 +5,14 @@ import numpy as np
 import pandas as pd
 from os.path import join
 from mtmkl.load_kernel import load
-from mtmkl.multikernel import model_selection, multi_logistic, cross_validate
+from mtmkl.multikernel import model_selection, multi_logistic
 
 
 def main():
 
-    X_list, y_list = load("/home/vanessa/DATA_SEEG/PKL_FILE/")
+    X_list, y_list = load("/home/vanessa/DATA_SEEG/PKL_FILE/", return_kernel_name=True)
     print(y_list)
-
+    return
     klc = model_selection.MultipleKernelRandomizedSearchCV(
             multi_logistic.MultipleLogisticRegressionMultipleKernel(
             gamma=0.1,
@@ -30,8 +30,8 @@ def main():
             n_iter=120
             )
 
-    cv_results = cross_validate(klc, X_list, y_list,
-                                cv=StratifiedShuffleSplit(test_size=0.5, n_splits=50))
+    cv_results = model_selection.cross_validate(klc, X_list, y_list,
+                                                cv=StratifiedShuffleSplit(test_size=0.5, n_splits=50))
 
     pickle.dump(cv_results, open("results_learning.pkl", "wb"))
 

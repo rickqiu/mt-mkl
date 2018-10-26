@@ -40,13 +40,14 @@ class CWTTransform():
         percentage_height = 20. / 19
         tmp_central_f = self.fs / tmp_scale
 
+        # we cover the spectrum from 1 Hz to Nyquist    
+        min_freq = 1.
         if self.scales is None:
-            # we must cover the spectrum from 0 to Nyquist
             scales = []
             freqs = []
             filter_width = []
 
-            while(tmp_central_f > 1.):
+            while(tmp_central_f > min_freq):
                 scales.append(tmp_scale)
                 freqs.append(tmp_central_f)
                 sigma_filter = 1 / (np.sqrt(2) * np.pi * self.T * tmp_scale)

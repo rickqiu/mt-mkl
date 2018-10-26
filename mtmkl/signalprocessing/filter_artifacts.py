@@ -79,7 +79,6 @@ class PreProcessing():
         halfband = float(bandwidth) / 2
 
         bandstop_freqs = powerline * np.arange(1, self.nyq / powerline)  # this array goes from powerline to nyq
-        print(bandstop_freqs)
 
         for f in bandstop_freqs:
             b, a = butter(forder, [(f-halfband)/self.nyq, (f+halfband)/self.nyq], 'bandstop', analog=False)

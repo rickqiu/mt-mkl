@@ -18,7 +18,6 @@ from sklearn.model_selection import GridSearchCV, check_cv
 from sklearn.model_selection import RandomizedSearchCV, check_cv
 from sklearn.model_selection._validation import (_aggregate_score_dicts,
                                                  _index_param_value, _score)
-from sklearn.utils.deprecation import DeprecationDict
 from sklearn.utils.fixes import MaskedArray
 from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _num_samples
@@ -412,7 +411,8 @@ def cross_validate(estimator, X, y=None, groups=None, scoring=None, cv=None,
     test_scores = _aggregate_score_dicts(test_scores)
 
     # TODO: replace by a dict in 0.21
-    ret = DeprecationDict() if return_train_score == 'warn' else {}
+    # ret = DeprecationDict() if return_train_score == 'warn' else {}
+    ret = {}
     ret['fit_time'] = np.array(fit_times)
     ret['score_time'] = np.array(score_times)
 
@@ -437,7 +437,7 @@ def cross_validate(estimator, X, y=None, groups=None, scoring=None, cv=None,
             ret[key1] = train_idx
             key2 = "test_index"
             ret[key2] = test_idx
-            
+
     return ret
 
 
@@ -557,9 +557,9 @@ class MultipleKernelGridSearchCV(GridSearchCV):
             train_scores = _aggregate_score_dicts(train_score_dicts)
 
         # TODO: replace by a dict in 0.21
-        results = (DeprecationDict() if self.return_train_score == 'warn'
-                   else {})
-
+        # results = (DeprecationDict() if self.return_train_score == 'warn'
+        #            else {})
+        results = {}
         def _store(key_name, array, weights=None, splits=False, rank=False):
             """Store the scores/times to the cv_results_."""
             # When iterated first by splits, then by parameters
@@ -773,8 +773,9 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
             train_scores = _aggregate_score_dicts(train_score_dicts)
 
         # TODO: replace by a dict in 0.21
-        results = (DeprecationDict() if self.return_train_score == 'warn'
-                   else {})
+        # results = (DeprecationDict() if self.return_train_score == 'warn'
+        #           else {})
+        results = {}
 
         def _store(key_name, array, weights=None, splits=False, rank=False):
             """Store the scores/times to the cv_results_."""

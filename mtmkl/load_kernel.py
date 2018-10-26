@@ -10,7 +10,7 @@ from os.path import join
 from mtmkl.utils import generate_index
 
 
-def load(path):  # , prc_tr, prc_val, prc_ts):
+def load(path, return_kernel_name=False):  # , prc_tr, prc_val, prc_ts):
     """ Here we give the path which contains the kernel for each patient. This folder contains three directories - corr, plv, cross
     First we load the dataset (X, y). The folder structure is such that:
     path
@@ -35,7 +35,11 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
 
     # /path_to_data/patient_ID/data.pickle
 
+    if return_kernel_name:
+        kernel_name = []
+
     id_list = sorted([path + f for f in os.listdir(path) if (os.path.isdir(path + f) and "kernel" in os.listdir(path + f))])
+
     # here we print the path to the folder for each ID
     # each of these paths contains the Y.csv and the folder of kernels
 
@@ -43,13 +47,19 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
     kernels = []
 
     for id in id_list:
+
         # path for the kernels
-        kernels.append(sorted([join(path, id, "kernel", k, s) for k in os.listdir(join(path, id, "kernel")) for s in os.listdir(join(path, id, "kernel", k))]))
-        y.append(join(id, "data.pkl"))
+        # correlation - 0, 1, 10, 11, .. 19, 2, 20, 21, .. , 82
+        # cross correlation
+        # plv
+        kernel_list_str = sorted([join(path, id, "kernel", k, s) for k in os.listdir(join(path, id, "kernel")) for s in os.listdir(join(path, id, "kernel", k))])
+
+        kernels.append(kernel_list_str)  # list of files for each patient
+        y.append(join(id, "data.pkl"))   # file that contains Y label
 
     X_list, y_list = [], []
 
-    for kk, yy in zip(kernels, y):
+    for idx, (kk, yy) in enumerate(zip(kernels, y)):
 
         # load the dataframe with time series and labels
         labels = pd.DataFrame(pd.read_pickle(yy)["Y"])
@@ -59,11 +69,14 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
         X_patient, y_patient = [], []
 
         for f in kk:
+            if idx == 0 and return_kernel_name:
+                kernel_name.append(join(f.split("/")[-2], f.split("/")[-1].split(".")[0]))
 
             # load the file - fixed patient - kernel - scale
             scale = pd.read_csv(f, header=0, index_col=0)
 
             scale = scale.sort_index().loc[:, sorted(scale.columns)] # order
+
             merging = scale.merge(labels, left_index=True, right_index=True)
             labels_ = merging['Y']  # sorted labels
             merging = merging[merging.index]
@@ -71,8 +84,11 @@ def load(path):  # , prc_tr, prc_val, prc_ts):
             X_patient.append(merging.values)  # [channels, channels, 300]
             y_patient = labels_.values  # labels
 
+
         X_list.append(np.array(X_patient))
         y_list.append(y_patient)
 
 
+    if return_kernel_name:
+        X_list, y_list, kernel_name
     return X_list, y_list
