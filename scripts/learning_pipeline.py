@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from os.path import join
+from sklearn.metrics import make_scorer
 from scipy.stats import uniform
 from mtmkl.load_kernel import load
 from mtmkl.metrics import balanced_accuracy_multiple
