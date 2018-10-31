@@ -15,8 +15,6 @@ def main():
 
     pickle.dump(kernel_list, open("kernel_list.pkl", "wb"))
 
-    return
-
     for s in range(10):  # number of splits 5 * 10
 
         klc = model_selection.MultipleKernelRandomizedSearchCV(
