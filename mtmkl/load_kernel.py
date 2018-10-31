@@ -33,7 +33,7 @@ def load(path, return_kernel_name=False):  # , prc_tr, prc_val, prc_ts):
 
     ##### path example for labels
 
-    # /path_to_data/patient_ID/data.pickle
+    # /path_to_data/patient_ID/patient_ID.csv
 
     if return_kernel_name:
         kernel_name = []
@@ -55,15 +55,14 @@ def load(path, return_kernel_name=False):  # , prc_tr, prc_val, prc_ts):
         kernel_list_str = sorted([join(path, id, "kernel", k, s) for k in os.listdir(join(path, id, "kernel")) for s in os.listdir(join(path, id, "kernel", k))])
 
         kernels.append(kernel_list_str)  # list of files for each patient
-        y.append(join(id, "data.pkl"))   # file that contains Y label
+        y.append(id + "/" + id.split("/")[-1] + ".csv")   # file that contains Y label
 
     X_list, y_list = [], []
 
     for idx, (kk, yy) in enumerate(zip(kernels, y)):
 
         # load the dataframe with time series and labels
-        labels = pd.DataFrame(pd.read_pickle(yy)["Y"])
-        labels.columns = ['Y']
+        labels = pd.read_csv(yy, index_col=0, header=None)
 
         # generate the list for data and labels
         X_patient, y_patient = [], []
@@ -78,7 +77,9 @@ def load(path, return_kernel_name=False):  # , prc_tr, prc_val, prc_ts):
             scale = scale.sort_index().loc[:, sorted(scale.columns)] # order
 
             merging = scale.merge(labels, left_index=True, right_index=True)
-            labels_ = merging['Y']  # sorted labels
+
+            labels_ = merging[1]  # sorted labels
+
             merging = merging[merging.index]
 
             X_patient.append(merging.values)  # [channels, channels, 300]
@@ -90,5 +91,7 @@ def load(path, return_kernel_name=False):  # , prc_tr, prc_val, prc_ts):
 
 
     if return_kernel_name:
-        X_list, y_list, kernel_name
-    return X_list, y_list
+        return X_list, y_list, kernel_name
+
+    else:
+        return X_list, y_list
