@@ -14,10 +14,11 @@ from sklearn.base import clone, is_classifier
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals.joblib import Parallel, delayed, logger
 from sklearn.metrics.scorer import _check_multimetric_scoring
-from sklearn.model_selection import GridSearchCV, check_cv
-from sklearn.model_selection import RandomizedSearchCV, check_cv
-from sklearn.model_selection._validation import (_aggregate_score_dicts,
-                                                 _index_param_value, _score)
+from sklearn.model_selection import GridSearchCV, check_cv, ParameterGrid
+from sklearn.model_selection import RandomizedSearchCV, check_cv, ParameterSampler
+from sklearn.model_selection._validation import (
+    _aggregate_score_dicts, _index_param_value, _score)
+from sklearn.utils.deprecation import DeprecationDict
 from sklearn.utils.fixes import MaskedArray
 from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _num_samples
@@ -38,11 +39,11 @@ def _safe_split_multi(estimator, X, y, train, test):
     return X_train, y_train, X_test, y_test
 
 
-def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
-                   parameters, fit_params, return_train_score=False,
-                   return_parameters=False, return_n_test_samples=False,
-                   return_times=False, error_score='raise',
-                   return_estimator=False, return_idx=True):
+def _fit_and_score(
+        estimator, X, y, scorer, train, test, verbose, parameters, fit_params,
+        return_train_score=False, return_parameters=False,
+        return_n_test_samples=False, return_times=False, error_score='raise',
+        return_estimator=False, return_idx=True):
     """Fit estimator and compute scores for a given dataset split.
 
     Parameters
@@ -126,14 +127,14 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
         if parameters is None:
             msg = ''
         else:
-            msg = '%s' % (', '.join('%s=%s' % (k, v)
-                          for k, v in parameters.items()))
+            msg = '%s' % (
+                ', '.join('%s=%s' % (k, v) for k, v in parameters.items()))
         print("[CV] %s %s" % (msg, (64 - len(msg)) * '.'))
 
     # Adjust length of sample weights
     fit_params = fit_params if fit_params is not None else {}
-    fit_params = dict([(k, _index_param_value(X, v, train))
-                      for k, v in fit_params.items()])
+    fit_params = dict(
+        [(k, _index_param_value(X, v, train)) for k, v in fit_params.items()])
 
     test_scores = {}
     train_scores = {}
@@ -163,22 +164,28 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
             raise
         elif isinstance(error_score, numbers.Number):
             if is_multimetric:
-                test_scores = dict(zip(scorer.keys(),
-                                   [error_score, ] * n_scorers))
+                test_scores = dict(
+                    zip(scorer.keys(), [
+                        error_score,
+                    ] * n_scorers))
                 if return_train_score:
-                    train_scores = dict(zip(scorer.keys(),
-                                        [error_score, ] * n_scorers))
+                    train_scores = dict(
+                        zip(scorer.keys(), [
+                            error_score,
+                        ] * n_scorers))
             else:
                 test_scores = error_score
                 if return_train_score:
                     train_scores = error_score
-            warnings.warn("Classifier fit failed. The score on this train-test"
-                          " partition for these parameters will be set to %f. "
-                          "Details: \n%r" % (error_score, e), FitFailedWarning)
+            warnings.warn(
+                "Classifier fit failed. The score on this train-test"
+                " partition for these parameters will be set to %f. "
+                "Details: \n%r" % (error_score, e), FitFailedWarning)
         else:
-            raise ValueError("error_score must be the string 'raise' or a"
-                             " numeric value. (Hint: if using 'raise', please"
-                             " make sure that it has been spelled correctly.)")
+            raise ValueError(
+                "error_score must be the string 'raise' or a"
+                " numeric value. (Hint: if using 'raise', please"
+                " make sure that it has been spelled correctly.)")
 
     else:
         fit_time = time.time() - start_time
@@ -186,8 +193,8 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
         test_scores = _score(estimator, X_test, y_test, scorer, is_multimetric)
         score_time = time.time() - start_time - fit_time
         if return_train_score:
-            train_scores = _score(estimator, X_train, y_train, scorer,
-                                  is_multimetric)
+            train_scores = _score(
+                estimator, X_train, y_train, scorer, is_multimetric)
 
     if verbose > 2:
         if is_multimetric:
@@ -215,10 +222,10 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
     return ret
 
 
-def cross_validate(estimator, X, y=None, groups=None, scoring=None, cv=None,
-                   n_jobs=1, verbose=0, fit_params=None,
-                   pre_dispatch='2*n_jobs', return_train_score="warn",
-                   return_estimator=True, return_idx=True):
+def cross_validate(
+        estimator, X, y=None, groups=None, scoring=None, cv=None, n_jobs=1,
+        verbose=0, fit_params=None, pre_dispatch='2*n_jobs',
+        return_train_score="warn", return_estimator=True, return_idx=True):
     """Evaluate metric(s) by cross-validation and also record fit/score times.
 
     Read more in the :ref:`User Guide <multimetric_cross_validation>`.
@@ -381,12 +388,14 @@ def cross_validate(estimator, X, y=None, groups=None, scoring=None, cv=None,
     cv = check_cv(cv, y, classifier=is_classifier(estimator))
     scorers, _ = _check_multimetric_scoring(estimator, scoring=scoring)
 
-    n_splits = min(cv.get_n_splits(X_.transpose(1, 2, 0), y_, None)
-                   for X_, y_ in zip(X, y))
+    n_splits = min(
+        cv.get_n_splits(X_.transpose(1, 2, 0), y_, None)
+        for X_, y_ in zip(X, y))
 
     def generate_index(X_list, y_list):
-        split = [cv.split(X.transpose(1, 2, 0), y)
-                 for X, y in zip(X_list, y_list)]
+        split = [
+            cv.split(X.transpose(1, 2, 0), y) for X, y in zip(X_list, y_list)
+        ]
         for i in range(n_splits):
             yield zip(*[next(s) for s in split])
 
@@ -394,8 +403,8 @@ def cross_validate(estimator, X, y=None, groups=None, scoring=None, cv=None,
 
     # We clone the estimator to make sure that all the folds are
     # independent, and that it is pickle-able.
-    parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
-                        pre_dispatch=pre_dispatch)
+    parallel = Parallel(
+        n_jobs=n_jobs, verbose=verbose, pre_dispatch=pre_dispatch)
     scores = parallel(
         delayed(_fit_and_score)(
             clone(estimator), X, y, scorers, train, test, verbose, None,
@@ -404,15 +413,16 @@ def cross_validate(estimator, X, y=None, groups=None, scoring=None, cv=None,
         for train, test in generate_index_iter)
 
     if return_train_score and return_estimator and return_idx:
-        train_scores, test_scores, fit_times, score_times, estima, train_idx, test_idx  = zip(*scores)
+        train_scores, test_scores, fit_times, score_times, estima, train_idx, test_idx = zip(
+            *scores)
         train_scores = _aggregate_score_dicts(train_scores)
     else:
         test_scores, fit_times, score_times = zip(*scores)
     test_scores = _aggregate_score_dicts(test_scores)
 
     # TODO: replace by a dict in 0.21
-    # ret = DeprecationDict() if return_train_score == 'warn' else {}
-    ret = {}
+    ret = DeprecationDict() if return_train_score == 'warn' else {}
+    # ret = {}
     ret['fit_time'] = np.array(fit_times)
     ret['score_time'] = np.array(score_times)
 
@@ -445,6 +455,10 @@ class MultipleKernelGridSearchCV(GridSearchCV):
     # Ensure consistent split
     _pairwise = True
 
+    def _get_param_iterator(self):
+        """Return ParameterGrid instance for the given param_grid"""
+        return ParameterGrid(self.param_grid)
+
     def fit(self, X, y=None, groups=None, **fit_params):
         """Run fit with all sets of parameters.
 
@@ -467,14 +481,16 @@ class MultipleKernelGridSearchCV(GridSearchCV):
 
         """
         if self.fit_params is not None:
-            warnings.warn('"fit_params" as a constructor argument was '
-                          'deprecated in version 0.19 and will be removed '
-                          'in version 0.21. Pass fit parameters to the '
-                          '"fit" method instead.', DeprecationWarning)
+            warnings.warn(
+                '"fit_params" as a constructor argument was '
+                'deprecated in version 0.19 and will be removed '
+                'in version 0.21. Pass fit parameters to the '
+                '"fit" method instead.', DeprecationWarning)
             if fit_params:
-                warnings.warn('Ignoring fit_params passed as a constructor '
-                              'argument in favor of keyword arguments to '
-                              'the "fit" method.', RuntimeWarning)
+                warnings.warn(
+                    'Ignoring fit_params passed as a constructor '
+                    'argument in favor of keyword arguments to '
+                    'the "fit" method.', RuntimeWarning)
             else:
                 fit_params = self.fit_params
         estimator = self.estimator
@@ -485,17 +501,18 @@ class MultipleKernelGridSearchCV(GridSearchCV):
 
         if self.multimetric_:
             if self.refit is not False and (
-                    not isinstance(self.refit, six.string_types) or
-                    # This will work for both dict / list (tuple)
+                    not isinstance(self.refit, six.string_types)
+                    or  # This will work for both dict / list (tuple)
                     self.refit not in scorers):
-                raise ValueError("For multi-metric scoring, the parameter "
-                                 "refit must be set to a scorer key "
-                                 "to refit an estimator with the best "
-                                 "parameter setting on the whole data and "
-                                 "make the best_* attributes "
-                                 "available for that metric. If this is not "
-                                 "needed, refit should be set to False "
-                                 "explicitly. %r was passed." % self.refit)
+                raise ValueError(
+                    "For multi-metric scoring, the parameter "
+                    "refit must be set to a scorer key "
+                    "to refit an estimator with the best "
+                    "parameter setting on the whole data and "
+                    "make the best_* attributes "
+                    "available for that metric. If this is not "
+                    "needed, refit should be set to False "
+                    "explicitly. %r was passed." % self.refit)
             else:
                 refit_metric = self.refit
         else:
@@ -506,12 +523,15 @@ class MultipleKernelGridSearchCV(GridSearchCV):
             raise NotImplementedError("groups are not supported")
 
         # n_splits = cv.get_n_splits(X, y, groups)
-        n_splits = min(cv.get_n_splits(X_.transpose(1, 2, 0), y_, None)
-                       for X_, y_ in zip(X, y))
+        n_splits = min(
+            cv.get_n_splits(X_.transpose(1, 2, 0), y_, None)
+            for X_, y_ in zip(X, y))
 
         def generate_index(X_list, y_list):
-            split = [cv.split(X.transpose(1, 2, 0), y)
-                     for X, y in zip(X_list, y_list)]
+            split = [
+                cv.split(X.transpose(1, 2, 0), y)
+                for X, y in zip(X_list, y_list)
+            ]
             for i in range(n_splits):
                 yield zip(*[next(s) for s in split])
 
@@ -521,34 +541,38 @@ class MultipleKernelGridSearchCV(GridSearchCV):
         candidate_params = list(self._get_param_iterator())
         n_candidates = len(candidate_params)
         if self.verbose > 0:
-            print("Fitting {0} folds for each of {1} candidates, totalling"
-                  " {2} fits".format(n_splits, n_candidates,
-                                     n_candidates * n_splits))
+            print(
+                "Fitting {0} folds for each of {1} candidates, totalling"
+                " {2} fits".format(
+                    n_splits, n_candidates, n_candidates * n_splits))
 
         base_estimator = clone(self.estimator)
         pre_dispatch = self.pre_dispatch
 
         out = Parallel(
             n_jobs=self.n_jobs, verbose=self.verbose,
-            pre_dispatch=pre_dispatch
-        )(delayed(_fit_and_score)(clone(base_estimator), X, y, scorers, train,
-                                  test, self.verbose, parameters,
-                                  fit_params=fit_params,
-                                  return_train_score=self.return_train_score,
-                                  return_n_test_samples=True,
-                                  return_times=True, return_parameters=False,
-                                  error_score=self.error_score,
-                                  return_estimator=True, return_idx=True)
-          for parameters, (train, test) in product(
-            candidate_params, generate_index_iter))
+            pre_dispatch=pre_dispatch)(
+                delayed(_fit_and_score)(
+                    clone(base_estimator), X, y, scorers, train, test, self.
+                    verbose, parameters, fit_params=fit_params,
+                    return_train_score=self.return_train_score,
+                    return_n_test_samples=True, return_times=True,
+                    return_parameters=False, error_score=self.error_score,
+                    return_estimator=True, return_idx=True)
+                for parameters, (
+                    train,
+                    test) in product(candidate_params, generate_index_iter))
 
         # if one choose to see train score, "out" will contain train score info
         if self.return_train_score:
-            (train_score_dicts, test_score_dicts, test_sample_counts, fit_time,
-             score_time, estimators, train_idxs, test_idxs) = zip(*out)
+            (
+                train_score_dicts, test_score_dicts, test_sample_counts,
+                fit_time, score_time, estimators, train_idxs,
+                test_idxs) = zip(*out)
         else:
-            (test_score_dicts, test_sample_counts, fit_time,
-             score_time, estimators, train_idxs, test_idxs) = zip(*out)
+            (
+                test_score_dicts, test_sample_counts, fit_time, score_time,
+                estimators, train_idxs, test_idxs) = zip(*out)
 
         # test_score_dicts and train_score dicts are lists of dictionaries and
         # we make them into dict of lists
@@ -557,27 +581,29 @@ class MultipleKernelGridSearchCV(GridSearchCV):
             train_scores = _aggregate_score_dicts(train_score_dicts)
 
         # TODO: replace by a dict in 0.21
-        # results = (DeprecationDict() if self.return_train_score == 'warn'
-        #            else {})
-        results = {}
+        results = (
+            DeprecationDict() if self.return_train_score == 'warn' else {})
+
+        # results = {}
         def _store(key_name, array, weights=None, splits=False, rank=False):
             """Store the scores/times to the cv_results_."""
             # When iterated first by splits, then by parameters
             # We want `array` to have `n_candidates` rows and `n_splits` cols.
-            array = np.array(array, dtype=np.float64).reshape(n_candidates,
-                                                              n_splits)
+            array = np.array(array, dtype=np.float64).reshape(
+                n_candidates, n_splits)
             if splits:
                 for split_i in range(n_splits):
                     # Uses closure to alter the results
-                    results["split%d_%s"
-                            % (split_i, key_name)] = array[:, split_i]
+                    results["split%d_%s" % (split_i,
+                                            key_name)] = array[:, split_i]
 
             array_means = np.average(array, axis=1, weights=weights)
             results['mean_%s' % key_name] = array_means
             # Weighted std is not directly available in numpy
-            array_stds = np.sqrt(np.average((array -
-                                             array_means[:, np.newaxis]) ** 2,
-                                            axis=1, weights=weights))
+            array_stds = np.sqrt(
+                np.average(
+                    (array - array_means[:, np.newaxis])**2, axis=1,
+                    weights=weights))
             results['std_%s' % key_name] = array_stds
 
             if rank:
@@ -593,10 +619,10 @@ class MultipleKernelGridSearchCV(GridSearchCV):
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
         # not contain all the params
-        param_results = defaultdict(partial(MaskedArray,
-                                            np.empty(n_candidates,),
-                                            mask=True,
-                                            dtype=object))
+        param_results = defaultdict(
+            partial(
+                MaskedArray, np.empty(n_candidates, ), mask=True,
+                dtype=object))
         for cand_i, params in enumerate(candidate_params):
             for name, value in params.items():
                 # An all masked empty array gets created for the key
@@ -609,17 +635,18 @@ class MultipleKernelGridSearchCV(GridSearchCV):
         results['params'] = candidate_params
 
         # NOTE test_sample counts (weights) remain the same for all candidates
-        test_sample_counts = np.array(test_sample_counts[:n_splits],
-                                      dtype=np.int)
+        test_sample_counts = np.array(
+            test_sample_counts[:n_splits], dtype=np.int)
         for scorer_name in scorers.keys():
             # Computed the (weighted) mean and std for test scores alone
-            _store('test_%s' % scorer_name, test_scores[scorer_name],
-                   splits=True, rank=True,
-                   weights=test_sample_counts if self.iid else None)
+            _store(
+                'test_%s' % scorer_name, test_scores[scorer_name], splits=True,
+                rank=True, weights=test_sample_counts if self.iid else None)
             if self.return_train_score:
                 prev_keys = set(results.keys())
-                _store('train_%s' % scorer_name, train_scores[scorer_name],
-                       splits=True)
+                _store(
+                    'train_%s' % scorer_name, train_scores[scorer_name],
+                    splits=True)
 
                 if self.return_train_score == 'warn':
                     for key in set(results.keys()) - prev_keys:
@@ -637,8 +664,8 @@ class MultipleKernelGridSearchCV(GridSearchCV):
         if self.refit or not self.multimetric_:
             self.best_index_ = results["rank_test_%s" % refit_metric].argmin()
             self.best_params_ = candidate_params[self.best_index_]
-            self.best_score_ = results["mean_test_%s" % refit_metric][
-                self.best_index_]
+            self.best_score_ = results["mean_test_%s" %
+                                       refit_metric][self.best_index_]
 
         if self.refit:
             self.best_estimator_ = clone(base_estimator).set_params(
@@ -661,6 +688,10 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
     # Ensure consistent split
     _pairwise = True
 
+    def _get_param_iterator(self):
+        """Return ParameterSampler instance for the given param_distributions"""
+        return ParameterSampler(self.param_distributions, self.n_iter)
+
     def fit(self, X, y=None, groups=None, **fit_params):
         """Run fit with all sets of parameters.
 
@@ -683,14 +714,16 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
 
         """
         if self.fit_params is not None:
-            warnings.warn('"fit_params" as a constructor argument was '
-                          'deprecated in version 0.19 and will be removed '
-                          'in version 0.21. Pass fit parameters to the '
-                          '"fit" method instead.', DeprecationWarning)
+            warnings.warn(
+                '"fit_params" as a constructor argument was '
+                'deprecated in version 0.19 and will be removed '
+                'in version 0.21. Pass fit parameters to the '
+                '"fit" method instead.', DeprecationWarning)
             if fit_params:
-                warnings.warn('Ignoring fit_params passed as a constructor '
-                              'argument in favor of keyword arguments to '
-                              'the "fit" method.', RuntimeWarning)
+                warnings.warn(
+                    'Ignoring fit_params passed as a constructor '
+                    'argument in favor of keyword arguments to '
+                    'the "fit" method.', RuntimeWarning)
             else:
                 fit_params = self.fit_params
         estimator = self.estimator
@@ -701,17 +734,18 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
 
         if self.multimetric_:
             if self.refit is not False and (
-                    not isinstance(self.refit, six.string_types) or
-                    # This will work for both dict / list (tuple)
+                    not isinstance(self.refit, six.string_types)
+                    or  # This will work for both dict / list (tuple)
                     self.refit not in scorers):
-                raise ValueError("For multi-metric scoring, the parameter "
-                                 "refit must be set to a scorer key "
-                                 "to refit an estimator with the best "
-                                 "parameter setting on the whole data and "
-                                 "make the best_* attributes "
-                                 "available for that metric. If this is not "
-                                 "needed, refit should be set to False "
-                                 "explicitly. %r was passed." % self.refit)
+                raise ValueError(
+                    "For multi-metric scoring, the parameter "
+                    "refit must be set to a scorer key "
+                    "to refit an estimator with the best "
+                    "parameter setting on the whole data and "
+                    "make the best_* attributes "
+                    "available for that metric. If this is not "
+                    "needed, refit should be set to False "
+                    "explicitly. %r was passed." % self.refit)
             else:
                 refit_metric = self.refit
         else:
@@ -722,12 +756,15 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
             raise NotImplementedError("groups are not supported")
 
         # n_splits = cv.get_n_splits(X, y, groups)
-        n_splits = min(cv.get_n_splits(X_.transpose(1, 2, 0), y_, None)
-                       for X_, y_ in zip(X, y))
+        n_splits = min(
+            cv.get_n_splits(X_.transpose(1, 2, 0), y_, None)
+            for X_, y_ in zip(X, y))
 
         def generate_index(X_list, y_list):
-            split = [cv.split(X.transpose(1, 2, 0), y)
-                     for X, y in zip(X_list, y_list)]
+            split = [
+                cv.split(X.transpose(1, 2, 0), y)
+                for X, y in zip(X_list, y_list)
+            ]
             for i in range(n_splits):
                 yield zip(*[next(s) for s in split])
 
@@ -737,34 +774,38 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
         candidate_params = list(self._get_param_iterator())
         n_candidates = len(candidate_params)
         if self.verbose > 0:
-            print("Fitting {0} folds for each of {1} candidates, totalling"
-                  " {2} fits".format(n_splits, n_candidates,
-                                     n_candidates * n_splits))
+            print(
+                "Fitting {0} folds for each of {1} candidates, totalling"
+                " {2} fits".format(
+                    n_splits, n_candidates, n_candidates * n_splits))
 
         base_estimator = clone(self.estimator)
         pre_dispatch = self.pre_dispatch
 
         out = Parallel(
             n_jobs=self.n_jobs, verbose=self.verbose,
-            pre_dispatch=pre_dispatch
-        )(delayed(_fit_and_score)(clone(base_estimator), X, y, scorers, train,
-                                  test, self.verbose, parameters,
-                                  fit_params=fit_params,
-                                  return_train_score=self.return_train_score,
-                                  return_n_test_samples=True,
-                                  return_times=True, return_parameters=False,
-                                  error_score=self.error_score,
-                                  return_estimator=True, return_idx=True)
-          for parameters, (train, test) in product(
-            candidate_params, generate_index_iter))
+            pre_dispatch=pre_dispatch)(
+                delayed(_fit_and_score)(
+                    clone(base_estimator), X, y, scorers, train, test, self.
+                    verbose, parameters, fit_params=fit_params,
+                    return_train_score=self.return_train_score,
+                    return_n_test_samples=True, return_times=True,
+                    return_parameters=False, error_score=self.error_score,
+                    return_estimator=True, return_idx=True)
+                for parameters, (
+                    train,
+                    test) in product(candidate_params, generate_index_iter))
 
         # if one choose to see train score, "out" will contain train score info
         if self.return_train_score:
-            (train_score_dicts, test_score_dicts, test_sample_counts, fit_time,
-             score_time, estimators, train_idxs, test_idxs) = zip(*out)
+            (
+                train_score_dicts, test_score_dicts, test_sample_counts,
+                fit_time, score_time, estimators, train_idxs,
+                test_idxs) = zip(*out)
         else:
-            (test_score_dicts, test_sample_counts, fit_time,
-             score_time, estimators, train_idxs, test_idxs) = zip(*out)
+            (
+                test_score_dicts, test_sample_counts, fit_time, score_time,
+                estimators, train_idxs, test_idxs) = zip(*out)
 
         # test_score_dicts and train_score dicts are lists of dictionaries and
         # we make them into dict of lists
@@ -773,28 +814,30 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
             train_scores = _aggregate_score_dicts(train_score_dicts)
 
         # TODO: replace by a dict in 0.21
-        # results = (DeprecationDict() if self.return_train_score == 'warn'
-        #           else {})
-        results = {}
+        results = (
+            DeprecationDict() if self.return_train_score == 'warn' else {})
+
+        # results = {}
 
         def _store(key_name, array, weights=None, splits=False, rank=False):
             """Store the scores/times to the cv_results_."""
             # When iterated first by splits, then by parameters
             # We want `array` to have `n_candidates` rows and `n_splits` cols.
-            array = np.array(array, dtype=np.float64).reshape(n_candidates,
-                                                              n_splits)
+            array = np.array(array, dtype=np.float64).reshape(
+                n_candidates, n_splits)
             if splits:
                 for split_i in range(n_splits):
                     # Uses closure to alter the results
-                    results["split%d_%s"
-                            % (split_i, key_name)] = array[:, split_i]
+                    results["split%d_%s" % (split_i,
+                                            key_name)] = array[:, split_i]
 
             array_means = np.average(array, axis=1, weights=weights)
             results['mean_%s' % key_name] = array_means
             # Weighted std is not directly available in numpy
-            array_stds = np.sqrt(np.average((array -
-                                             array_means[:, np.newaxis]) ** 2,
-                                            axis=1, weights=weights))
+            array_stds = np.sqrt(
+                np.average(
+                    (array - array_means[:, np.newaxis])**2, axis=1,
+                    weights=weights))
             results['std_%s' % key_name] = array_stds
 
             if rank:
@@ -810,10 +853,10 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
         # not contain all the params
-        param_results = defaultdict(partial(MaskedArray,
-                                            np.empty(n_candidates,),
-                                            mask=True,
-                                            dtype=object))
+        param_results = defaultdict(
+            partial(
+                MaskedArray, np.empty(n_candidates, ), mask=True,
+                dtype=object))
         for cand_i, params in enumerate(candidate_params):
             for name, value in params.items():
                 # An all masked empty array gets created for the key
@@ -826,17 +869,18 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
         results['params'] = candidate_params
 
         # NOTE test_sample counts (weights) remain the same for all candidates
-        test_sample_counts = np.array(test_sample_counts[:n_splits],
-                                      dtype=np.int)
+        test_sample_counts = np.array(
+            test_sample_counts[:n_splits], dtype=np.int)
         for scorer_name in scorers.keys():
             # Computed the (weighted) mean and std for test scores alone
-            _store('test_%s' % scorer_name, test_scores[scorer_name],
-                   splits=True, rank=True,
-                   weights=test_sample_counts if self.iid else None)
+            _store(
+                'test_%s' % scorer_name, test_scores[scorer_name], splits=True,
+                rank=True, weights=test_sample_counts if self.iid else None)
             if self.return_train_score:
                 prev_keys = set(results.keys())
-                _store('train_%s' % scorer_name, train_scores[scorer_name],
-                       splits=True)
+                _store(
+                    'train_%s' % scorer_name, train_scores[scorer_name],
+                    splits=True)
 
                 if self.return_train_score == 'warn':
                     for key in set(results.keys()) - prev_keys:
@@ -854,8 +898,8 @@ class MultipleKernelRandomizedSearchCV(RandomizedSearchCV):
         if self.refit or not self.multimetric_:
             self.best_index_ = results["rank_test_%s" % refit_metric].argmin()
             self.best_params_ = candidate_params[self.best_index_]
-            self.best_score_ = results["mean_test_%s" % refit_metric][
-                self.best_index_]
+            self.best_score_ = results["mean_test_%s" %
+                                       refit_metric][self.best_index_]
 
         if self.refit:
             self.best_estimator_ = clone(base_estimator).set_params(
