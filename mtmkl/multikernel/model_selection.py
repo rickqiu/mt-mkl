@@ -1,5 +1,6 @@
 """Parameters search for Multiple Kernel Learning."""
 from __future__ import print_function
+
 import numbers
 import time
 import warnings
@@ -14,8 +15,9 @@ from sklearn.base import clone, is_classifier
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals.joblib import Parallel, delayed, logger
 from sklearn.metrics.scorer import _check_multimetric_scoring
-from sklearn.model_selection import GridSearchCV, check_cv, ParameterGrid
-from sklearn.model_selection import RandomizedSearchCV, check_cv, ParameterSampler
+from sklearn.model_selection import (
+    GridSearchCV, ParameterGrid, ParameterSampler, RandomizedSearchCV,
+    check_cv)
 from sklearn.model_selection._validation import (
     _aggregate_score_dicts, _index_param_value, _score)
 from sklearn.utils.deprecation import DeprecationDict
