@@ -1,4 +1,4 @@
-"""Add from remote."""
+"""Metrics module."""
 import numpy as np
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import balanced_accuracy_score
