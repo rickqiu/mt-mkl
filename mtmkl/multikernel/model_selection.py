@@ -1,4 +1,4 @@
-"""GridSearch for Multiple Kernel Learning."""
+"""Parameters search for Multiple Kernel Learning."""
 from __future__ import print_function
 import numbers
 import time
