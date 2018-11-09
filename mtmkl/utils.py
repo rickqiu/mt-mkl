@@ -12,9 +12,11 @@ def flatten(lst):
 
 def generate_index(X_list, y_list, cv):
     X_list_transpose = [X.transpose(1, 2, 0) for X in X_list]
-    split = [cv.split(X, y) for X, y in zip(X_list_transpose, y_list)]
+    split = [cv.split(X, y) for X, y in zip(X_list_transpose, y_list)]  
+    # this is a list, each element contains all the splits for one task
     n_splits = min(
         cv.get_n_splits(X, y, None) for X, y in zip(X_list_transpose, y_list))
+        # control for the number of splits fixed as the minimum over all tasks 
 
     for _ in range(n_splits):
         yield zip(*[next(s) for s in split])

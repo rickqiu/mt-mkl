@@ -361,12 +361,12 @@ def cross_validate(
     Single metric evaluation using ``cross_validate``
 
     >>> cv_results = cross_validate(lasso, X, y, return_train_score=False)
-    >>> sorted(cv_results.keys())                         # doctest: +ELLIPSIS
+    >>> sorted(cv_results.keys())                      test_indexIPSIS
     ['fit_time', 'score_time', 'test_score']
-    >>> cv_results['test_score']    # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    >>> cv_results['test_score']    # doctest: +ELLIPSItest_indexSPACE
     array([ 0.33...,  0.08...,  0.03...])
 
-    Multiple metric evaluation using ``cross_validate``
+    Multiple metric evaluation using ``cross_validate``test_index
     (please refer the ``scoring`` parameter doc for more information)
 
     >>> scores = cross_validate(lasso, X, y,
