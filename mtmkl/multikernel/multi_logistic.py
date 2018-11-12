@@ -131,6 +131,8 @@ def logistic_alternating(
                 l_i.intercept_.ravel(), lamda * l1_ratio_lamda)
             intercepts.append(c)
             alpha_intercept.append(np.hstack((a, c)))
+            l_i.coef_ = a.reshape(l_i.coef_.shape)
+            l_i.intercept_ = c.reshape(l_i.intercept_.shape)
 
         # alpha = [log.coef_.ravel() for log in lr_p2]
         # intercepts = [log.intercept_.ravel() for log in lr_p2]
@@ -288,21 +290,11 @@ class MultipleLogisticRegressionMultipleKernel(
         #     self, np.tensordot(k, a, axes=1)) for a, k in zip(
         #         self.alpha_, X)]
 
-        class_ = []
-        for i in range(len(X)):
-            model = ((np.tensordot(self.coef_.ravel(), X[i], axes=1)).dot(self.alpha_[i]) + self.intercept_[i])
-
-            class_i = np.ones_like(model)
-            class_i[(1 / (1 + np.exp(model))) > 0.5] = - 1
-            class_.append(class_i)
-
-        return class_
-
-        # return [
-        #     self.lr_p2[i].predict(
-        #         np.tensordot(self.coef_.ravel(), X[i], axes=1))
-        # for i in range(len(X))
-        # ]
+        return [
+            self.lr_p2[i].predict(
+                np.tensordot(self.coef_.ravel(), X[i], axes=1))
+        for i in range(len(X))
+        ]
 
     def score(self, K, y, sample_weight=None):
         """Returns the coefficient of determination R^2 of the prediction.
@@ -371,21 +363,13 @@ class MultipleLogisticRegressionMultipleKernel(
         #     self, np.tensordot(k, a, axes=1)) for a, k in zip(
         #         self.alpha_, X)]
 
-        proba = []
 
-        for i in range(len(X)):
-            model = ((np.tensordot(self.coef_.ravel(), X[i], axes=1)).dot(self.alpha_[i]) + self.intercept_[i])
+        return [
+            self.lr_p2[i].predict_proba(
+                np.tensordot(self.coef_.ravel(), X[i], axes=1))
+            for i in range(len(X))
+            ]
 
-            proba.append(np.vstack((1 / (1 + np.exp(model)),
-                np.exp(model) / (1 + np.exp(model)))).T)
-
-        return proba
-
-        #return [
-        #    self.lr_p2[i].predict_proba(
-        #        np.tensordot(self.coef_.ravel(), X[i], axes=1))
-        #    for i in range(len(X))
-        #]
 
     def predict_log_proba(self, X):
         """Log of probability estimates.
