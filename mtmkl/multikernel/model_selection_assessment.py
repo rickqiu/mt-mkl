@@ -72,7 +72,6 @@ def learning_procedure(X, y, repetitions, test_size, cvfolds, param_dict, gridse
     param_combinations = generate_params_comb(param_dict, gridsearch, ext)
 
     cv_ts_lr = StratifiedShuffleSplit(test_size=test_size, n_splits=repetitions)
-    cv_tr_vl = StratifiedKFold(cvfolds)
 
     results = dict()
     results["beta"] = []
@@ -86,26 +85,39 @@ def learning_procedure(X, y, repetitions, test_size, cvfolds, param_dict, gridse
     results["multi score"] = []
 
     if permutation_test:
+        results["random beta"] = []
+        results["random l1_ratio_beta"] = []
+        results["random l1_ratio_lamda"] = []
+        results["random lamda"] = []
+        results["random estimator"] = []
         results["random single score"] = []
         results["random multi score"] = []
 
+
     # this definition is needed because safesplit needs the attribute __pairwise
     # of MultipleLogisticRegressionMultipleKernel() to perform the split for kernels
-    multikernel = multi_logistic.MultipleLogisticRegressionMultipleKernel()
+    tmpmkl = multi_logistic.MultipleLogisticRegressionMultipleKernel()
 
     # split between learning and test set - number of repetitions is specified in cv_ts_lr
     for learn, test in generate_index(X, y, cv=cv_ts_lr):
-        X_learn, y_learn, X_test, y_test = _safe_split_multi(multikernel, X, y,
+
+        X_learn, y_learn, X_test, y_test = _safe_split_multi(tmpmkl, X, y,
             learn, test)
 
         # for all the possible combinations of hyperparameters we save the mean balanced accuracy
         balanced_accuracy_multiple_hyperparams = []
 
+        if permutation_test:
+            perm_y_learn = [np.random.permutation(yy) for yy in y_learn]
+            # perm_y_test = [np.random.permutation(yy) for yy in y_test]
+            perm_balanced_accuracy_multiple_hyperparams = []
+
         # pick a tuple
         for beta_, l1_ratio_beta_, l1_ratio_lamda_, lamda_ in param_combinations:
 
+            cv_tr_vl = StratifiedKFold(cvfolds)
             # multikernel with fixed parameters
-            multikernel = multi_logistic.MultipleLogisticRegressionMultipleKernel(
+            cvmkl = multi_logistic.MultipleLogisticRegressionMultipleKernel(
                 gamma=0.1, # the gradient descent step is fixed
                 l1_ratio_beta=l1_ratio_beta_,
                 l1_ratio_lamda=l1_ratio_lamda_,
@@ -114,17 +126,33 @@ def learning_procedure(X, y, repetitions, test_size, cvfolds, param_dict, gridse
 
             balanced_accuracy_multiple_KFold = []  # KFold, with fixed tuple
 
-            for train, val in generate_index(X_learn, y_learn, cv=cv_tr_vl):  # split for K times
-                X_train, y_train, X_val, y_val = _safe_split_multi(multikernel, X_learn, y_learn,
-                train, val)  # save split
+            if permutation_test:
+                perm_balanced_accuracy_multiple_KFold = []
 
-                multikernel.fit(X_train, y_train)  # we fit the model
-                # we evaluate the score
-                score = balanced_accuracy_multiple(y_val, multikernel.predict(X_val))
+            for train, val in generate_index(X_learn, y_learn, cv=cv_tr_vl):  # split for K times
+                X_train, y_train, X_val, y_val = _safe_split_multi(cvmkl, X_learn, y_learn, train, val)  # save split
+
+                cvmkl.fit(X_train, y_train)  # fit and score
+                score = balanced_accuracy_multiple(y_val, cvmkl.predict(X_val))
                 balanced_accuracy_multiple_KFold.append(score)  # we append the score for each fold
+
+                if permutation_test:
+
+                    perm_y_train = [np.random.permutation(yy) for yy in y_train]
+                    perm_y_val = [np.random.permutation(yy) for yy in y_val]
+                    # X_train, perm_y_train, X_val, perm_y_val = _safe_split_multi(cvmkl, X_learn, perm_y_learn, train, val)
+                    # it is not guaranteed that we keep the ratio between the two classes
+
+                    cvmkl.fit(X_train, perm_y_train)
+                    perm_score = balanced_accuracy_multiple(perm_y_val, cvmkl.predict(X_val))
+                    perm_balanced_accuracy_multiple_KFold.append(perm_score)
 
             balanced_accuracy_multiple_hyperparams.append(  # we compute the average value across the Kfold
                 np.mean(np.array(balanced_accuracy_multiple_KFold)))
+
+            if permutation_test:
+                perm_balanced_accuracy_multiple_hyperparams.append(
+                    np.mean(np.array(perm_balanced_accuracy_multiple_KFold)))
 
         idx_best_perf = np.argmax(balanced_accuracy_multiple_hyperparams)
         beta, l1_ratio_beta, l1_ratio_lamda, lamda = param_combinations[idx_best_perf]
@@ -134,31 +162,48 @@ def learning_procedure(X, y, repetitions, test_size, cvfolds, param_dict, gridse
         results["l1_ratio_lamda"].append(l1_ratio_lamda)
         results["lamda"].append(lamda)
 
+        if permutation_test:
+            idx_random_best_perm = np.argmax(perm_balanced_accuracy_multiple_hyperparams)
+            r_beta, r_l1_ratio_beta, r_l1_ratio_lamda, r_lamda = param_combinations[idx_random_best_perm]
+            results["random beta"] = r_beta
+            results["random l1_ratio_beta"] = r_l1_ratio_beta
+            results["random l1_ratio_lamda"] = r_l1_ratio_lamda
+            results["random lamda"] = r_lamda
+
         # REFIT
-        multikernel = multi_logistic.MultipleLogisticRegressionMultipleKernel(
+        bestmkl = multi_logistic.MultipleLogisticRegressionMultipleKernel(
                 gamma=0.1, # the gradient descent step is fixed
                 beta=beta,
                 l1_ratio_beta=l1_ratio_beta,
                 l1_ratio_lamda=l1_ratio_lamda,
                 lamda=lamda,
                 verbose=0, max_iter=200, deep=False)
-        multikernel.fit(X_learn, y_learn)
+        bestmkl.fit(X_learn, y_learn)
 
-        results["estimator"].append(multikernel)
+        results["estimator"].append(bestmkl)
         results["learn index"].append(learn)
         results["test index"].append(test)
 
-        results["multi score"].append(balanced_accuracy_multiple(y_test, multikernel.predict(X_test)))
+        results["multi score"].append(balanced_accuracy_multiple(y_test, bestmkl.predict(X_test)))
         results["single score"].append([balanced_accuracy_score(y_ts_, y_pr_)
-                                        for y_ts_, y_pr_ in zip(y_test, multikernel.predict(X_test))])
+                                        for y_ts_, y_pr_ in zip(y_test, bestmkl.predict(X_test))])
 
         if permutation_test:
-            perm_y_learn = [np.random.permutation(yy) for yy in y_learn]
-            multikernel.fit(X_learn, perm_y_learn)
-            results["random multi score"].append(balanced_accuracy_multiple(y_test, multikernel.predict(X_test)))
+            r_bestmkl = multi_logistic.MultipleLogisticRegressionMultipleKernel(
+                    gamma=0.1, # the gradient descent step is fixed
+                    beta=r_beta,
+                    l1_ratio_beta=r_l1_ratio_beta,
+                    l1_ratio_lamda=r_l1_ratio_lamda,
+                    lamda=r_lamda,
+                    verbose=0, max_iter=200, deep=False)
+
+            r_bestmkl.fit(X_learn, perm_y_learn)
+
+            results["random estimator"].append(r_bestmkl)
+
+            results["random multi score"].append(balanced_accuracy_multiple(y_test, r_bestmkl.predict(X_test)))
             results["random single score"].append([balanced_accuracy_score(y_ts_, y_pr_)
-                                                  for y_ts_, y_pr_ in zip(y_test, multikernel.predict(X_test))])
+                                                  for y_ts_, y_pr_ in zip(y_test, r_bestmkl.predict(X_test))])
+
 
     return results
-
-

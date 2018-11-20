@@ -191,7 +191,6 @@ class LogisticRegressionMultipleKernel(LogisticRegression,
         #                      % (X.shape[1], n_features))
         #
         scores = np.tensordot(self.coef_, X, axes=1)  # + self.intercept_
-        print(scores)
         return scores.ravel()  # if scores.shape[1] == 1 else scores
 
     def predict(self, K):

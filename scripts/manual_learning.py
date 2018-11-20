@@ -20,10 +20,10 @@ def main():
     kfold = 3
     split_per_file = 5
 
-    for r in range(repetitions / split_per_file - 1):
+    for r in range(4, 4 + repetitions / split_per_file):
         results = model_selection_assessment.learning_procedure(X_list, y_list, split_per_file, test_size, kfold, param_grid)
         print(results)
-        with open('/home/compbio/networkEEG/mtmklMLHC_allPatients/experiment_01/split' + str(r) + '.pkl', 'wb') as f:
+        with open('/home/compbio/networkEEG/mtmklMLHC_allPatients/experiment_03/split' + str(r) + '.pkl', 'wb') as f:
             pickle.dump(results, f)
         #sys.exit(0)
 

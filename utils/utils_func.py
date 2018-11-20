@@ -1,4 +1,5 @@
 import numpy as np
+from __future__ import division
 from sklearn.metrics import confusion_matrix
 
 
@@ -67,7 +68,7 @@ def balanced_accuracy_score(y_true, y_pred, sample_weight=None,
 
 
 def balanced_accuracy_multiple(y_true, y_pred, sample_weight=None):
-    ba = [palladio.metrics.balanced_accuracy_score(yt, yp) for yt, yp in zip(y_true, y_pred)]
+    ba = [balanced_accuracy_score(yt, yp) for yt, yp in zip(y_true, y_pred)]
     #for p, b in zip(PATIENTS, ba):
     #    logging.info("Balanced accuracy for %s: %.4f" % (p, b))
     return np.mean(ba)
