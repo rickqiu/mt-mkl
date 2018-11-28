@@ -35,7 +35,7 @@ def H0zscore(X):
         distre = np.array([re_id[np.logical_and(re_id >= min_id, re_id <= max_id)] for re_id, min_id, max_id in zip(repart, minre, maxre)])
         distim = np.array([im_id[np.logical_and(im_id >= min_id, im_id <= max_id)] for im_id, min_id, max_id in zip(impart, minim, maxim)])
 
-        for dre, dim in distre, distim:
+        for dre, dim in zip(distre, distim):
             mure, sigmare = norm.fit(dre)  # fit for each channel
             muim, sigmaim = norm.fit(dim)
             mure_list.append(mure)
