@@ -31,8 +31,6 @@ def main():
         except:
             pass
 
-        return
-
         print(ff.keys())
 
         # the pickle is such that it contains in the last columns the structural features for the channel of acquisition
@@ -60,15 +58,31 @@ def main():
 
             cwt_1, cwt_2, cwt_3 = np.hsplit(cwt_coefs[:, :-exclude_p], 3)
 
-            ### training set
+            ########## training set ##########
             pd.DataFrame(data=phaselockingvalue(cwt_1), index=ff.index,
                         columns=ff.index).to_csv(join(path, f, "kernel_split", "train", pathkernel[0], "scale_"+str(n)+".csv"))
 
-            pd.DataFrame(data=correlation(np.abs(cwt_1)), index=ff.index,  columns=ff.index).to_csv(join(path, f, "kernel_split", "valid",  pathkernel[1], "scale_"+str(n)+".csv"))
+            pd.DataFrame(data=correlation(np.abs(cwt_1)), index=ff.index,  columns=ff.index).to_csv(join(path, f, "kernel_split", "train",  pathkernel[1], "scale_"+str(n)+".csv"))
 
-            pd.DataFrame(data=fourier_corr(cwt_1), index=ff.index, columns=ff.index).to_csv(join(path, f, "kernel_split", "test", pathkernel[2], "scale_"+str(n)+".csv"))
+            pd.DataFrame(data=fourier_corr(cwt_1), index=ff.index, columns=ff.index).to_csv(join(path, f, "kernel_split", "train", pathkernel[2], "scale_"+str(n)+".csv"))
 
-            
+
+            ########## validation set ##########
+            pd.DataFrame(data=phaselockingvalue(cwt_1, cwt_2), index=ff.index,
+                        columns=ff.index).to_csv(join(path, f, "kernel_split", "valid", pathkernel[0], "scale_"+str(n)+".csv"))
+
+            pd.DataFrame(data=correlation(np.abs(cwt_1), np.abs(cwt_2)),    index=ff.index,  columns=ff.index).to_csv(join(path, f, "kernel_split", "valid",  pathkernel[1], "scale_"+str(n)+".csv"))
+
+            pd.DataFrame(data=fourier_corr(cwt_1, cwt_2), index=ff.index, columns=ff.index).to_csv(join(path, f, "kernel_split", "valid", pathkernel[2], "scale_"+str(n)+".csv"))
+
+
+            ########## test set ##########
+            pd.DataFrame(data=phaselockingvalue(cwt_1, cwt_3), index=ff.index,
+                        columns=ff.index).to_csv(join(path, f, "kernel_split", "test", pathkernel[0], "scale_"+str(n)+".csv"))
+
+            pd.DataFrame(data=correlation(np.abs(cwt_1), np.abs(cwt_3)), index=ff.index,  columns=ff.index).to_csv(join(path, f, "kernel_split", "test",  pathkernel[1], "scale_"+str(n)+".csv"))
+
+            pd.DataFrame(data=fourier_corr(cwt_1, cwt_3), index=ff.index, columns=ff.index).to_csv(join(path, f, "kernel_split", "test", pathkernel[2], "scale_"+str(n)+".csv"))
 
 
 
