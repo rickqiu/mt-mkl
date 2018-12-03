@@ -53,10 +53,10 @@ def main():
 
             # we want to remove the edges, after all the filtering part
             cwt_coefs = remove_edges(cwt_coefs)
-            _, p = cwt_coefs.shape  # we consider the number of points to keep
+            __, p = cwt_coefs.shape  # we consider the number of points to keep
             exclude_p = p%3  # we exclude the edges - last point in such a way that we can divide the array in three
 
-            cwt_1, cwt_2, cwt_3 = np.hsplit(cwt_coefs[:, :-exclude_p], 3)
+            cwt_1, cwt_2, cwt_3 = np.hsplit(cwt_coefs[:, :p-exclude_p], 3)
 
             ########## training set ##########
             pd.DataFrame(data=phaselockingvalue(cwt_1), index=ff.index,
