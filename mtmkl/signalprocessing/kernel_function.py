@@ -39,7 +39,7 @@ def correlation(x, y=None):
 
 
 def fourier_corr(x, y=None):
-    """ Crosscorrelation computes the cross correlation between two time series. We return a normalized value for the cross correlation.
+    """ Cross-correlation computes the cross correlation between two time series. We return a normalized value for the cross correlation.
     We consider the Fourier transform of the signal for this scope
     We can pass as input variables
     (i) x, a matrix of recordings of dimensions (# recordings, # length time series)
@@ -63,10 +63,9 @@ def fourier_corr(x, y=None):
     if x.ndim == 2 and y is None:
         n, _ = x.shape
         kernel = np.zeros((n, n))
-        ampx = np.abs(fft(x, axis=-1))
+
         for idx, ax in enumerate(ampx):
-            for id2, ay in enumerate(ampx[idx+1:]):
-                idy = id2 + idx + 1
+            for idy, ay in zip(range(idx+1, n), ampx[idx+1:]):
                 kernel[idx, idy] = ax.dot(ay) / (norm(ax)*norm(ay))
         kernel += kernel.T + np.identity(n)
         return kernel
@@ -112,7 +111,7 @@ def phaselockingvalue(x, y=None):
         n, p = x.shape
         kernel = np.zeros((n,n))
         phase = np.arctan2(np.imag(x), np.real(x));
-        return np.abs(np.exp(1j * phase).dot(np.exp(-1j * phase.T))) / p
+        return np.abs(np.exp(1j * phase).dot(np.exp(-1j * phase.T))) / float(p)
 
     elif y.ndim == 2 and x.ndim == 2:
         n, p = x.shape
