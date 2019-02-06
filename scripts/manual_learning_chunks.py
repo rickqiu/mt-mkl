@@ -136,17 +136,20 @@ def main():
     path = '/home/compbio/networkEEG/dataset_corr_cross_plv'
 
     XX_list, yy_list, kk_list = load_kernel(path, return_kernel_name=True)
-    pickle.dump(kk_list, open('kernel_list_ts.pkl', 'wb'))
+    pickle.dump(kk_list, open('kernel_list.pkl', 'wb'))
 
-    param_grid={'beta': [0.1, 0.4, 0.9],
-                'l1_ratio_beta': [0.1, 0.4, 0.9],
-                'l1_ratio_lamda': [0.1, 0.4, 0.9],
-                'lamda': [0.1, 0.4, 0.9]}
+    param_grid={'beta': [1e-2, 5e-2, 0.1, 0.4, 0.9],
+                'l1_ratio_beta': [0.9],
+                'l1_ratio_lamda': [1e-2, 5e-2, 0.1, 0.4, 0.9],
+                'lamda': [1e-2, 5e-2, 0.1, 0.4, 0.9]}
 
-    results = model_selection_assessment_timesplit.learning_procedure(XX_list, yy_list, param_grid)
+    # we repeat the experiment five time to verify its stability
+    for r in range(5):  # number of repetition
+        print('repetition: ' + str(r+1))
+        results = model_selection_assessment_timesplit.learning_procedure(XX_list, yy_list, param_grid)
 
-    with open('results_ts.pkl', 'wb') as f:
-       pickle.dump(results, f)
+        with open('results_ts_rep_' + str(r) + '.pkl', 'wb') as f:
+           pickle.dump(results, f)
 
 
 
