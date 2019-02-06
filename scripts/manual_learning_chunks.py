@@ -138,10 +138,10 @@ def main():
     XX_list, yy_list, kk_list = load_kernel(path, return_kernel_name=True)
     pickle.dump(kk_list, open('kernel_list.pkl', 'wb'))
 
-    param_grid={'beta': [1e-2, 5e-2, 0.1, 0.4, 0.9],
-                'l1_ratio_beta': [0.9],
-                'l1_ratio_lamda': [1e-2, 5e-2, 0.1, 0.4, 0.9],
-                'lamda': [1e-2, 5e-2, 0.1, 0.4, 0.9]}
+    param_grid={'beta': [0.1, 0.4, 0.9],
+                'l1_ratio_beta': [0.1, 0.4, 0.9],
+                'l1_ratio_lamda': [0.1, 0.4, 0.9],
+                'lamda': [0.1, 0.4, 0.9]}
 
     # we repeat the experiment five time to verify its stability
     for r in range(5):  # number of repetition
