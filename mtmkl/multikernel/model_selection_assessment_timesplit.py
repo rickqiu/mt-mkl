@@ -7,6 +7,7 @@ from mtmkl.metrics import balanced_accuracy_multiple
 
 def learning_procedure(X_list, y_list, params_dict, gridsearch=True, ext=None, permutation_test=True):
 
+    param_combination = model_selection_assessment.generate_params_comb(params_dict)
 
     results = dict()
     results["beta"] = []
@@ -49,9 +50,9 @@ def learning_procedure(X_list, y_list, params_dict, gridsearch=True, ext=None, p
 
         if permutation_test:
             perm_y_tr = [np.random.permutation(yy) for yy in y_tr]
-            perm_y_vl = [np.random.permutation(yy) for yy in y_vl]
+            # perm_y_vl = [np.random.permutation(yy) for yy in y_vl]
             cvmkl.fit(X_tr, perm_y_tr)
-            perm_score = balanced_accuracy_multiple(y_vl, cvmkl.predict(X_vl))
+            perm_score = balanced_accuracy_multiple(perm_y_tr, cvmkl.predict(X_vl))
             permuted_balanced_accuracy_multiple_hyperparams.append(perm_score)
 
     idx_best_perf = np.argmax(balanced_accuracy_multiple_hyperparams)
@@ -104,10 +105,10 @@ def learning_procedure(X_list, y_list, params_dict, gridsearch=True, ext=None, p
 
         ############ estimate over test set ############
         results["random estimator"].append(r_bestmkl)
-        results["random multi score"].append(balanced_accuracy_multiple(y_ts, r_bestmkl.predict(X_ts)))
-        print(balanced_accuracy_multiple(y_ts, r_bestmkl.predict(X_ts)))
+        results["random multi score"].append(balanced_accuracy_multiple(perm_y_tr, r_bestmkl.predict(X_ts)))
+        print(balanced_accuracy_multiple(perm_y_tr, r_bestmkl.predict(X_ts)))
         results["random single score"].append([balanced_accuracy_score(y_ts_, y_pr_)
-                                        for y_ts_, y_pr_ in zip(y_ts, r_bestmkl.predict(X_ts))])
+                                        for y_ts_, y_pr_ in zip(perm_y_tr, r_bestmkl.predict(X_ts))])
         print([balanced_accuracy_score(y_ts_, y_pr_)
-                                        for y_ts_, y_pr_ in zip(y_ts, r_bestmkl.predict(X_ts))])
+                                        for y_ts_, y_pr_ in zip(perm_y_tr, r_bestmkl.predict(X_ts))])
     return results
