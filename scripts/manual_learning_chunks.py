@@ -106,11 +106,11 @@ def load_kernel(path, return_kernel_name=False):
             merging_vl = merging_vl[merging_vl.index]
             merging_ts = merging_ts[merging_ts.index]
 
-            X_patient_tr.append(merging_tr.values)  # [channels, channels, 300]
+            X_patient_tr.append(merging_tr.values.T)  # [channels, channels, s]
             y_patient_tr = labels_tr_.values  # labels
-            X_patient_vl.append(merging_vl.values)  # [channels, channels, 300]
+            X_patient_vl.append(merging_vl.values.T)  # [channels, channels, s]
             y_patient_vl = labels_vl_.values  # labels
-            X_patient_ts.append(merging_ts.values)  # [channels, channels, 300]
+            X_patient_ts.append(merging_ts.values.T)  # [channels, channels, s]
             y_patient_ts = labels_ts_.values  # labels
 
         X_list_tr.append(np.array(X_patient_tr))

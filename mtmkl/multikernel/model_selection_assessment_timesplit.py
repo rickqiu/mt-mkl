@@ -7,7 +7,7 @@ from mtmkl.metrics import balanced_accuracy_multiple
 
 def learning_procedure(X_list, y_list, params_dict, gridsearch=True, ext=None, permutation_test=True):
 
-    param_combination = model_selection_assessment.generate_params_comb(params_dict)
+    param_combinations = model_selection_assessment.generate_params_comb(params_dict)
 
     results = dict()
     results["beta"] = []
